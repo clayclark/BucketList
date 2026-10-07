@@ -1,3 +1,5 @@
+import type { Cat } from './cats'
+
 export type TierEntry = { id: string; playerId: number | null; name: string; tag: string | null }
 export type Section = { id: string; name: string; note: string | null; entries: TierEntry[] }
 
@@ -112,4 +114,41 @@ export function parseTierSheet(csv: string, match: (name: string) => number | nu
     })
   }
   return sections
+}
+
+const TAG_CATS: Record<string, Cat> = { TO: 'to', FT: 'ft', FG: 'fg' }
+
+/**
+ * Sheet tags that make an entry conditional: "TO" or "FG or TO" mean "in this bucket if you punt that",
+ * "No Punt" means "in this bucket if you don't". Returns whether the entry applies to your punts.
+ * `twins` are the tags on the same player's other entries, which say what "No Punt" refers to.
+ */
+export function tagApplies(tag: string | null, punts: readonly Cat[], twins: (string | null)[]): boolean {
+  if (!tag) return true
+  if (/^no punt$/i.test(tag.trim())) return !twins.flatMap(tagCats).some((c) => punts.includes(c))
+  const cats = tagCats(tag)
+  return cats.length === 0 || cats.some((c) => punts.includes(c))
+}
+
+export const tagCats = (tag: string | null): Cat[] =>
+  tag ? tag.split(/\s+or\s+/i).flatMap((part) => (TAG_CATS[part.trim().toUpperCase()] ? [TAG_CATS[part.trim().toUpperCase()]] : [])) : []
+
+/** "35+" in the sheet: don't take before pick 35. */
+export const minPick = (tag: string | null) => Number(tag?.match(/^(\d+)\+$/)?.[1]) || null
+
+/**
+ * Buckets back in the sheet's layout (header row of up to 8 bucket names, players down each column,
+ * a blank row between blocks), so edits made here can be pasted back into the Google Sheet.
+ */
+export function sectionsToRows(sections: Section[], perRow = 8): string[][] {
+  const rows: string[][] = []
+  for (let i = 0; i < sections.length; i += perRow) {
+    const block = sections.slice(i, i + perRow)
+    const columns = block.map((s) => [...(s.note ? [s.note] : []), ...s.entries.map((e) => (e.tag ? `${e.name} (${e.tag})` : e.name))])
+    rows.push(block.map((s) => s.name))
+    const depth = Math.max(0, ...columns.map((c) => c.length))
+    for (let r = 0; r < depth; r++) rows.push(columns.map((c) => c[r] ?? ''))
+    rows.push([])
+  }
+  return rows
 }

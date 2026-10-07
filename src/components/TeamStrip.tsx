@@ -13,7 +13,7 @@ export function TeamStrip() {
   const n = ranks.teams
 
   return (
-    <button className="grid w-full shrink-0 grid-cols-9 gap-px border-b border-zinc-900 px-3 py-1" title="Your category ranks. Open Team." onClick={() => set({ tab: 'Team' })}>
+    <button className="grid w-full shrink-0 grid-cols-9 gap-px border-b border-zinc-900 px-3 py-1 lg:max-w-[760px] lg:border-b-0" title="Your category ranks. Open Team." onClick={() => set({ tab: 'Team' })}>
       {CATS.map((c) => {
         const now = ranks.now![c]
         const next = after?.[c] ?? now

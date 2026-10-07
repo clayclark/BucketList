@@ -1,6 +1,6 @@
 import { useState, type DragEvent, type ReactNode } from 'react'
 import { input, textBtn } from '../format'
-import type { Section, TierEntry } from '../lib/tiers'
+import { minPick, tagApplies, tagCats, type Section, type TierEntry } from '../lib/tiers'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 import { PlayerRow, type DragProps } from './PlayerRow'
@@ -15,14 +15,26 @@ const readDrag = (e: DragEvent): Drag | null => {
 }
 
 export function Buckets() {
-  const { sections, showTaken, set, addSection, mySlot } = useDraft()
-  const { draft, players, availAtTarget, allPlayers } = useModel()
+  const { sections, showTaken, set, addSection, mySlot, punts } = useDraft()
+  const { draft, players, availAtTarget, allPlayers, tiersByPlayer } = useModel()
   const [editing, setEditing] = useState(false)
   const [over, setOver] = useState<string | null>(null)
   const [order, setOrder] = useState<Order>('sheet')
 
-  const isOpen = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
+  // Entries tagged for a punt you aren't running (or "No Punt" when you are) stay visible but dimmed,
+  // and don't count toward what's left in their bucket.
+  const applies = (e: TierEntry) =>
+    e.playerId === null ||
+    tagApplies(
+      e.tag,
+      punts,
+      (tiersByPlayer.get(e.playerId) ?? []).filter((r) => r.entry.id !== e.id).map((r) => r.entry.tag),
+    )
+  const available = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
+  const isOpen = (e: TierEntry) => available(e) && applies(e)
   const live = sections.filter((s) => s.entries.some(isOpen))
+  // Show any bucket with someone available, even if they're all dimmed (e.g. Giannis listed only as "punt FT").
+  const shownSections = showTaken || editing ? sections : sections.filter((s) => s.entries.some(available))
   const current = live[0]?.id
   // How many of each bucket should still be on the board at your next pick.
   const expected = new Map(
@@ -87,7 +99,7 @@ export function Buckets() {
 
       {/* Wide: buckets fill row by row, so the ones you're choosing from stay at the top. */}
       <div className="grid items-start gap-x-6 px-3 lg:grid-cols-[repeat(auto-fill,minmax(380px,1fr))]" onDragLeave={() => setOver(null)}>
-        {(showTaken || editing ? sections : live).map((s) => (
+        {shownSections.map((s) => (
           <Bucket
             key={s.id}
             section={s}
@@ -97,6 +109,8 @@ export function Buckets() {
             waitHints={waitHints.has(s.id)}
             editing={editing}
             order={order}
+            isOpen={isOpen}
+            applies={applies}
             over={over}
             setOver={setOver}
           />
@@ -128,6 +142,8 @@ function Bucket({
   waitHints,
   editing,
   order,
+  isOpen,
+  applies,
   over,
   setOver,
 }: {
@@ -138,6 +154,8 @@ function Bucket({
   waitHints: boolean
   editing: boolean
   order: Order
+  isOpen: (e: TierEntry) => boolean
+  applies: (e: TierEntry) => boolean
   over: string | null
   setOver: (id: string | null) => void
 }) {
@@ -145,10 +163,10 @@ function Bucket({
   const { draft, availAtTarget, byId, teams } = useModel()
   const [renaming, setRenaming] = useState(false)
 
-  const open = section.entries.filter((e) => e.playerId === null || !draft.drafted.has(e.playerId))
-  const visible = showTaken || editing ? section.entries : open
+  const open = section.entries.filter(isOpen)
+  const visible = showTaken || editing ? section.entries : section.entries.filter((e) => e.playerId === null || !draft.drafted.has(e.playerId))
   const score = (e: TierEntry) => {
-    if (e.playerId === null || draft.drafted.has(e.playerId)) return -Infinity
+    if (e.playerId === null || !isOpen(e)) return -Infinity
     if (order === 'value') return byId.get(e.playerId)?.value ?? -99
     if (order === 'fit') return teams.fit.get(e.playerId) ?? -99
     return availAtTarget(e.playerId) ?? 2
@@ -242,7 +260,8 @@ function Bucket({
           <PlayerRow
             key={entry.id}
             id={entry.playerId}
-            tag={entry.tag && <span className="shrink-0 text-[11px] text-sky-400">{entry.tag}</span>}
+            tag={entry.tag && <Tag tag={entry.tag} applies={applies(entry)} current={draft.current} />}
+            dimmed={!applies(entry)}
             hint={
               waitHints &&
               (availAtTarget(entry.playerId) ?? 0) >= 0.7 && (
@@ -258,6 +277,30 @@ function Bucket({
         ),
       )}
     </section>
+  )
+}
+
+/** A sheet tag, colored by what it means right now: a punt you're running, a pick threshold reached. */
+function Tag({ tag, applies, current }: { tag: string; applies: boolean; current: number }) {
+  const n = minPick(tag)
+  if (n !== null) {
+    const ready = current >= n
+    return (
+      <span className={`shrink-0 text-[11px] ${ready ? 'text-emerald-400' : 'text-zinc-600'}`} title={ready ? `Pick ${n} reached` : `Your sheet says not before pick ${n}`}>
+        {tag}
+      </span>
+    )
+  }
+  const puntTag = tagCats(tag).length > 0
+  const noPunt = /^no punt$/i.test(tag.trim())
+  if (!puntTag && !noPunt) return <span className="shrink-0 text-[11px] text-sky-400">{tag}</span>
+  return (
+    <span
+      className={`shrink-0 text-[11px] ${!applies ? 'text-zinc-600' : puntTag ? 'text-amber-300' : 'text-sky-400'}`}
+      title={applies ? (puntTag ? 'Matches your punt' : "You're not punting what his other listing needs") : puntTag ? `Only if you punt ${tag}` : "Only if you're not punting"}
+    >
+      {tag}
+    </span>
   )
 }
 

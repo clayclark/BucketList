@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nameMatcher, parseTierSheet, sheetCsvUrl } from './tiers'
+import { minPick, nameMatcher, parseTierSheet, sectionsToRows, sheetCsvUrl, tagApplies } from './tiers'
 
 const players = [
   { id: 1, name: 'Stephen Curry' },
@@ -51,4 +51,35 @@ it('builds the CSV export url from a share link', () => {
     'https://docs.google.com/spreadsheets/d/abc-1_x/export?format=csv',
   )
   expect(sheetCsvUrl('https://docs.google.com/spreadsheets/d/abc/edit#gid=42')).toContain('&gid=42')
+})
+
+describe('sheet tags', () => {
+  it('applies punt entries only when you punt that category', () => {
+    expect(tagApplies('TO', ['to'], ['No Punt'])).toBe(true)
+    expect(tagApplies('TO', [], ['No Punt'])).toBe(false)
+    expect(tagApplies('FG or TO', ['fg'], [])).toBe(true)
+  })
+
+  it('applies No Punt entries only when you skip the punt their twin needs', () => {
+    expect(tagApplies('No Punt', [], ['TO'])).toBe(true)
+    expect(tagApplies('No Punt', ['to'], ['TO'])).toBe(false)
+    expect(tagApplies('No Punt', ['ft'], ['TO'])).toBe(true)
+  })
+
+  it('ignores tags that are not about punts', () => {
+    expect(tagApplies('35+', ['to'], [])).toBe(true)
+    expect(tagApplies('IL', [], [])).toBe(true)
+    expect(minPick('35+')).toBe(35)
+    expect(minPick('IL')).toBeNull()
+  })
+})
+
+it('writes buckets back in the sheet layout so they re-import unchanged', () => {
+  const sections = parseTierSheet(
+    ['Bucket 1,Upside Fliers', 'Cade Cunningham (TO),IN ORDER OF PREFERENCE!', 'Steph Curry,Kelel Ware'].join('\n'),
+    match,
+  )
+  const csv = sectionsToRows(sections).map((r) => r.join(',')).join('\n')
+  const strip = (s: typeof sections) => s.map(({ name, note, entries }) => ({ name, note, entries: entries.map(({ name, tag, playerId }) => ({ name, tag, playerId })) }))
+  expect(strip(parseTierSheet(csv, match))).toEqual(strip(sections))
 })

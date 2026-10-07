@@ -78,6 +78,16 @@ function useShortcuts() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') useDraft.getState().set({ selectedId: null })
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      // Up/down walk the visible player rows; the selected one expands.
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const rows = [...document.querySelectorAll<HTMLElement>('main [data-player-row]')]
+        if (!rows.length) return
+        e.preventDefault()
+        const { selectedId, set } = useDraft.getState()
+        const at = rows.findIndex((r) => Number(r.dataset.playerRow) === selectedId)
+        const next = at < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, at + (e.key === 'ArrowDown' ? 1 : -1)))
+        set({ selectedId: Number(rows[next].dataset.playerRow) })
+      }
       if (e.key === '/') {
         e.preventDefault()
         document.getElementById('player-search')?.focus()

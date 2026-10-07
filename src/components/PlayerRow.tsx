@@ -18,9 +18,11 @@ export function PlayerRow({
   detailed = false,
   dragProps,
   over = false,
+  dimmed = false,
   trailing,
 }: {
   id: number
+  dimmed?: boolean
   tag?: ReactNode
   hint?: ReactNode
   detailed?: boolean
@@ -52,7 +54,12 @@ export function PlayerRow({
   const noSlot = !taken && slots.tight && !slots.fills(player.pos)
 
   return (
-    <div ref={ref} {...dragProps} className={`-mx-1 border-t px-1 ${over ? 'border-amber-300' : 'border-transparent'} ${selected ? 'bg-zinc-900' : ''}`}>
+    <div
+      ref={ref}
+      {...dragProps}
+      data-player-row={id}
+      className={`-mx-1 border-t px-1 ${over ? 'border-amber-300' : 'border-transparent'} ${selected ? 'bg-zinc-900' : ''} ${dimmed && !selected ? 'opacity-40' : ''}`}
+    >
       <div
         className={`flex h-7 cursor-default items-center gap-1.5 ${selected ? '' : 'hover:bg-zinc-950'}`}
         onClick={() => set({ selectedId: selected ? null : id })}

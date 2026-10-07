@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { input, textBtn } from '../format'
 import { importSheet } from '../lib/importSheet'
+import { sectionsToRows } from '../lib/tiers'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 
@@ -95,6 +96,19 @@ export function Setup() {
           </button>
           <span className="text-zinc-500">{sheetStatus}</span>
           {unmatched > 0 && <span className="text-rose-400">{unmatched} unmatched</span>}
+        </Row>
+        <Row label="Backup">
+          <button
+            className="text-amber-300 hover:text-amber-200"
+            onClick={async () => {
+              // Tab-separated, so pasting into the sheet fills cells in the same layout it was imported from.
+              await navigator.clipboard.writeText(sectionsToRows(s.sections).map((r) => r.join('\t')).join('\n'))
+              setSheetStatus('Copied. Paste into a blank tab of your Google Sheet.')
+            }}
+          >
+            Copy as sheet
+          </button>
+          <span className="text-zinc-500">Your buckets with edits, in the sheet's layout</span>
         </Row>
       </section>
 

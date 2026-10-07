@@ -42,8 +42,8 @@ export function ClockBar({
   live: LiveDraft | null
   practice: boolean
 }) {
-  const { draft, allPlayers } = useModel()
-  const { teamNames, mySlot, espn, undo, picks, draftDate } = useDraft()
+  const { draft, allPlayers, tiersByPlayer } = useModel()
+  const { teamNames, teamAbbrevs, mySlot, espn, undo, picks, draftDate } = useDraft()
   const n = teamNames.length
   const round = Math.ceil(draft.current / n)
   const myTurn = draft.onClock === mySlot
@@ -55,6 +55,9 @@ export function ClockBar({
   const lastFilled = last?.overall ?? 0
   const missing = draft.owners.slice(0, lastFilled).filter((_, i) => !draft.byPick.has(i + 1)).length
   const clock = live?.clock && !live.done ? live.clock : null
+  // When the last pick came out of your buckets, say which one and what's left in it.
+  const lastTier = last && tiersByPlayer.get(last.playerId)?.[0]
+  const lastTierLeft = lastTier?.section.entries.filter((e) => e.playerId !== null && !draft.drafted.has(e.playerId)).length
 
   return (
     <header className={`shrink-0 border-b px-3 py-1.5 ${myTurn ? 'border-amber-300 bg-amber-300 text-black' : 'border-zinc-900'}`}>
@@ -112,7 +115,13 @@ export function ClockBar({
           <span className={myTurn ? '' : 'text-rose-400'}>{missing} earlier picks unknown. Keep the draft room open from the start.</span>
         ) : started ? (
           <span className="truncate">
-            Last #{last.overall} {teamNames[last.slot]}: <span className={myTurn ? '' : 'text-zinc-300'}>{allPlayers.get(last.playerId)?.name}</span>
+            Last #{last.overall} {teamAbbrevs[last.slot]}: <span className={myTurn ? '' : 'text-zinc-300'}>{allPlayers.get(last.playerId)?.name}</span>
+            {lastTier && (
+              <span className={myTurn ? '' : lastTierLeft === 0 ? 'text-rose-400' : 'text-amber-300'}>
+                {' · '}
+                {lastTier.section.name}, {lastTierLeft === 0 ? 'none' : lastTierLeft} left
+              </span>
+            )}
           </span>
         ) : (
           <span>

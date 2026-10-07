@@ -20,9 +20,9 @@ Be logged in to espn.com in the same browser. The extension reads your private l
 ## What's in it
 
 - **Category strip**: your rank in each of the 9 categories, always under the clock. Hover or select an available player to preview how drafting him moves each rank.
-- **Buckets**: your bucket sheet. Taken players drop out, and each bucket says how many should still be there at your next pick. Near your pick, the highest bucket that won't last says "take one now", players who'll likely come back say "can wait", and a line lists who's likely still there next time. The three best fits for your team are highlighted. Edit mode re-tiers by drag and drop.
+- **Buckets**: your bucket sheet. Taken players drop out, and each bucket says how many should still be there at your next pick. Near your pick, the highest bucket that won't last says "take one now", players who'll likely come back say "can wait", and a line lists who's likely still there next time. The three best fits for your team are highlighted. Your sheet's tags are read too: punt-specific listings like "Cade (TO)" / "Cade (No Punt)" follow your punt settings (the one that doesn't apply is dimmed and not counted), and pick thresholds like "Kawhi (30+)" light up once the draft reaches that pick. Edit mode re-tiers by drag and drop; Setup → Copy as sheet copies your edited buckets back in the sheet's layout.
 - **Players**: everyone, on the same rows, sortable by value, fit, ADP or availability.
-- **Every player row**: a 9-cell category heat strip, fit, and the chance he's back at your next pick. Click to expand details in place, including exactly which of your ranks he changes.
+- **Every player row**: a 9-cell category heat strip, fit, and the chance he's back at your next pick. Click (or use the arrow keys) to expand details in place, including exactly which of your ranks he changes.
 - **Team**: category ranks with punt toggles, and your roster placed into your league's lineup slots.
 - **League**: category standings with your expected record against each team, the draft board, rosters.
 
