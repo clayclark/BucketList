@@ -1,4 +1,5 @@
 import type { StatLine } from './cats'
+import { startersFrom } from './slots'
 
 // ESPN's season id is the year the season ends; the 2026-27 season is 2027.
 export const SEASON = (() => {
@@ -100,6 +101,8 @@ export type League = {
   pickOrder: number[]
   rosterSize: number
   draftDate: number | null
+  /** Starting lineup slots that need a specific position, e.g. ['C', 'G', 'G', 'F', 'F']. */
+  starters: string[]
   /** Team id owning each overall pick (index = overall - 1), including trades and third-round reversal. */
   owners: number[]
   made: { overall: number; teamId: number; playerId: number; keeper: boolean }[]
@@ -166,6 +169,7 @@ export function parseLeague(data: EspnLeague): League {
     pickOrder: pickOrder.length ? pickOrder : teams.map((t) => t.id),
     rosterSize: Object.entries(slotCounts).reduce((n, [slot, c]) => (slot === IR_SLOT ? n : n + c), 0),
     draftDate: data.settings?.draftSettings?.date ?? null,
+    starters: startersFrom(slotCounts),
     owners: picks.map((p) => p.teamId),
     made: made.sort((a, b) => a.overall - b.overall),
   }

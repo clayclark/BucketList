@@ -15,11 +15,11 @@ Then in Helium (or Chrome): open `helium://extensions` (`chrome://extensions`), 
 
 Be logged in to espn.com in the same browser. The extension reads your private league with that login and finds your team from it. If the panel shows an **Allow** banner, the browser is withholding site access (Helium can); allow it and reload the ESPN tab. After code changes, `pnpm build` and hit reload on the extensions page.
 
-**On draft night, open the ESPN draft room before the draft starts.** Picks come from the draft room itself: ESPN's league API doesn't update during a draft, so the extension reads the room's live pick feed. ESPN's practice drafts work the same way and make a full rehearsal.
+**On draft night, keep the ESPN draft room open.** Picks come from the draft room itself: ESPN's league API doesn't update during a draft, so the extension reads the room's live pick feed. Reloading or opening the room late is fine; it sends a full board snapshot on join and the panel catches up. ESPN's practice drafts work the same way and make a full rehearsal.
 
 ## What's in it
 
-- **Targets**: your bucket sheet. Taken players drop out, each bucket shows how many are left and how many should still be there at your next pick (red means take one now). Sort within buckets by value, fit or availability. Edit mode re-tiers by drag and drop.
+- **Targets**: your bucket sheet. Taken players drop out, each bucket shows how many are left and how many should still be there at your next pick. Near your pick, the highest bucket that won't last says "take one now". The three best fits for your team are highlighted, and once your picks run short, players who can't fill an open starting slot are flagged. Sort within buckets by value, fit or availability. Edit mode re-tiers by drag and drop.
 - **Players**: everyone, with 9-cat z-scores, sortable.
 - **Team**: your category ranks, punt toggles, positions, upcoming picks.
 - **League**: category standings with your expected record against each team, the draft board, rosters.

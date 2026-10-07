@@ -4,6 +4,7 @@ import type { CatLine } from './lib/cats'
 import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
 import { fetchFantraxAdp } from './lib/fantrax'
+import { openSlots } from './lib/slots'
 import type { Section, TierEntry } from './lib/tiers'
 import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, type Valued } from './lib/value'
 import { ownersOf, useDraft } from './store'
@@ -25,7 +26,7 @@ function useBuildModel() {
     [espn.data, adp.data],
   )
   const players = { ...espn, data }
-  const { teamCount, rosterSize, mySlot, punts, basis, totals, picks, sections, pickOwners } = useDraft()
+  const { teamCount, rosterSize, mySlot, punts, basis, totals, picks, sections, pickOwners, starters } = useDraft()
 
   const poolSize = teamCount * rosterSize
   const valued = useMemo(
@@ -68,6 +69,16 @@ function useBuildModel() {
     return { rosters, strengths, available, fit }
   }, [valued, byId, picks, teamCount, rosterSize, mySlot, poolSize, punts, draft])
 
+  // Starting slots my roster can't fill yet. Once my remaining picks only just cover them, a player who
+  // fills none of them costs a starter.
+  const slots = useMemo(() => {
+    const roster = (teams.rosters[mySlot] ?? []).map((v) => v.player.pos.split('/'))
+    const open = openSlots(starters, roster)
+    const tight = open.length > 0 && draft.mine.length <= open.length
+    const fills = (pos: string) => openSlots(starters, [...roster, pos.split('/')]).length < open.length
+    return { open, tight, fills }
+  }, [teams.rosters, mySlot, starters, draft.mine.length])
+
   const tiersByPlayer = useMemo(() => {
     const out = new Map<number, TierRef[]>()
     for (const section of sections)
@@ -75,6 +86,17 @@ function useBuildModel() {
         if (entry.playerId !== null) out.set(entry.playerId, [...(out.get(entry.playerId) ?? []), { section, entry }])
     return out
   }, [sections])
+
+  // Best three available fits among tiered players, highlighted on the board.
+  const topFit = useMemo(() => {
+    const tiered = teams.available.filter((v) => tiersByPlayer.has(v.player.id) && teams.fit.has(v.player.id))
+    return new Set(
+      tiered
+        .sort((a, b) => (teams.fit.get(b.player.id) ?? 0) - (teams.fit.get(a.player.id) ?? 0))
+        .slice(0, 3)
+        .map((v) => v.player.id),
+    )
+  }, [teams, tiersByPlayer])
 
   const availAtTarget = useCallback(
     (id: number) => {
@@ -85,7 +107,7 @@ function useBuildModel() {
     [allPlayers, draft],
   )
 
-  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, tiersByPlayer, availAtTarget, cats: activeCats(punts) }
+  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, slots, topFit, tiersByPlayer, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

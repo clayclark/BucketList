@@ -12,7 +12,7 @@ const league: EspnLeague = {
   ],
   settings: {
     draftSettings: { pickOrder: [7, 3] },
-    rosterSettings: { lineupSlotCounts: { '11': 2, '12': 1, '13': 3 } },
+    rosterSettings: { lineupSlotCounts: { '4': 1, '11': 2, '12': 1, '13': 3 } },
   },
   draftDetail: {
     picks: [
@@ -31,7 +31,8 @@ describe('parseLeague', () => {
 
   it('keeps ESPN pick ownership as-is, trades included, and skips IR in roster size', () => {
     expect(parsed.owners).toEqual([7, 3, 3, 7, 3, 3])
-    expect(parsed.rosterSize).toBe(3)
+    expect(parsed.rosterSize).toBe(4)
+    expect(parsed.starters).toEqual(['C'])
   })
 
   it('places pre-draft keepers on their reserved pick', () => {

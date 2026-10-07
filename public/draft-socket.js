@@ -1,7 +1,7 @@
 // Runs inside the ESPN draft room page. ESPN pushes picks over a WebSocket to fantasydraft.espn.com
-// ("SELECTED <teamId> <playerId> ..."). Forward only pick and clock lines to draft-relay.js; nothing else is read.
+// ("SELECTED <teamId> <playerId> ..."), plus an INIT snapshot of the whole board on (re)join. Forward only pick and clock lines to draft-relay.js; nothing else is read.
 ;(() => {
-  const KEEP = /^(SELECTED|SELECTING|CLOCK|STATE|PONG) /
+  const KEEP = /^(INIT|SELECTED|SELECTING|CLOCK|STATE|PONG) /
   const NativeWS = window.WebSocket
   window.WebSocket = class extends NativeWS {
     constructor(url, protocols) {

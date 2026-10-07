@@ -7,7 +7,7 @@ import { useDraft } from '../store'
 const POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C']
 
 export function TeamView() {
-  const { teams, draft } = useModel()
+  const { teams, draft, slots } = useModel()
   const { mySlot, teamNames, punts, togglePunt, set, totals } = useDraft()
   const roster = teams.rosters[mySlot] ?? []
   const mine = teams.strengths[mySlot]
@@ -66,12 +66,21 @@ export function TeamView() {
       </table>
       <p className="text-[11px] text-zinc-600">Open roster spots count as replacement-level players. Punts re-rank every player.</p>
 
-      <div className="flex gap-3 text-zinc-500">
+      <div className="flex flex-wrap gap-x-3 text-zinc-500">
         {POSITIONS.map((p) => (
           <span key={p}>
             {p} <span className={posCount(p) ? 'text-zinc-200' : 'text-rose-400'}>{posCount(p)}</span>
           </span>
         ))}
+        <span className="ml-auto">
+          {slots.open.length ? (
+            <>
+              Open starters <span className={slots.tight ? 'text-rose-400' : 'text-zinc-200'}>{slots.open.join(' · ')}</span>
+            </>
+          ) : (
+            'Starters filled'
+          )}
+        </span>
       </div>
 
       <div>

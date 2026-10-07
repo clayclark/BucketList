@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AccessBanner } from './components/AccessBanner'
 import { ClockBar } from './components/ClockBar'
 import { LeagueView } from './components/LeagueView'
@@ -11,7 +11,7 @@ import { Setup } from './components/Setup'
 import { TeamView } from './components/TeamView'
 import { Targets } from './components/Targets'
 import { espnSwid, fetchLeague } from './lib/espn'
-import { mergeLivePicks, type LiveDraft } from './lib/live'
+import { livePicks, mergeLivePicks, type LiveDraft } from './lib/live'
 import { importSheet } from './lib/importSheet'
 import { useModel } from './model'
 import { useDraft } from './store'
@@ -21,7 +21,10 @@ export type Tab = keyof typeof TABS
 
 const LIVE_FRESH_MS = 90_000
 
-/** The draft room's live picks, saved by the extension's content script. Fresh while a draft room tab is open. */
+/**
+ * The draft room's live picks, saved by the extension's content script. Used while a draft room tab is
+ * open and the draft isn't over; a finished practice draft's league is deleted, so fall back to yours.
+ */
 function useLiveDraft() {
   const [live, setLive] = useState<LiveDraft | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -36,7 +39,7 @@ function useLiveDraft() {
       clearInterval(tick)
     }
   }, [])
-  return live && now - live.seen < LIVE_FRESH_MS ? live : null
+  return live && !live.done && now - live.seen < LIVE_FRESH_MS ? live : null
 }
 
 function useLeagueSync(live: LiveDraft | null) {
@@ -52,10 +55,10 @@ function useLeagueSync(live: LiveDraft | null) {
     refetchInterval: 5000,
     retry: 1,
   })
-  const livePicks = live?.picks
+  const picks = useMemo(() => (live ? livePicks(live) : null), [live])
   useEffect(() => {
-    if (league.data) applyLeague(livePicks ? mergeLivePicks(league.data, livePicks) : league.data, swid.data ?? null)
-  }, [league.data, livePicks, swid.data, applyLeague])
+    if (league.data) applyLeague(picks ? mergeLivePicks(league.data, picks) : league.data, swid.data ?? null)
+  }, [league.data, picks, swid.data, applyLeague])
   return { league, practice: !!live && live.leagueId !== espn.leagueId }
 }
 

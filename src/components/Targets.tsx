@@ -17,8 +17,8 @@ const readDrag = (e: DragEvent): Drag | null => {
 }
 
 export function Targets() {
-  const { sections, showTaken, set, addSection } = useDraft()
-  const { draft, players } = useModel()
+  const { sections, showTaken, set, addSection, mySlot } = useDraft()
+  const { draft, players, availAtTarget } = useModel()
   const [editing, setEditing] = useState(false)
   const [over, setOver] = useState<string | null>(null)
   const [order, setOrder] = useState<Order>('sheet')
@@ -31,6 +31,18 @@ export function Targets() {
   )
   const isOpen = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
   const current = sections.find((s) => s.entries.some(isOpen))?.id
+  // How many of each bucket should still be on the board at your next pick.
+  const expected = new Map(
+    sections.map((s) => {
+      const ids = new Set(s.entries.flatMap((e) => (e.playerId !== null && isOpen(e) ? [e.playerId] : [])))
+      return [s.id, draft.target ? [...ids].reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null] as const
+    }),
+  )
+  // Close to your pick, flag only the highest bucket that won't last: that's the decision in front of you.
+  const soon = draft.onClock === mySlot || (draft.mine[0] ?? Infinity) - draft.current <= 2
+  const lastChance = soon
+    ? sections.find((s) => s.entries.some(isOpen) && (expected.get(s.id) ?? Infinity) < 1)?.id
+    : undefined
 
   if (!sections.length) {
     return <div className="p-3 text-zinc-500">{players.isPending ? 'Loading players…' : 'Importing tier sheet…'}</div>
@@ -57,7 +69,17 @@ export function Targets() {
         {sections
           .filter((s) => showTaken || editing || s.entries.some(isOpen))
           .map((s) => (
-            <Bucket key={s.id} section={s} current={s.id === current} editing={editing} order={order} over={over} setOver={setOver} />
+            <Bucket
+              key={s.id}
+              section={s}
+              current={s.id === current}
+              expected={expected.get(s.id) ?? null}
+              lastChance={s.id === lastChance}
+              editing={editing}
+              order={order}
+              over={over}
+              setOver={setOver}
+            />
           ))}
         {editing && (
           <button className={`${textBtn} my-3`} onClick={addSection}>
@@ -72,6 +94,8 @@ export function Targets() {
 function Bucket({
   section,
   current,
+  expected,
+  lastChance,
   editing,
   order,
   over,
@@ -79,6 +103,8 @@ function Bucket({
 }: {
   section: Section
   current: boolean
+  expected: number | null
+  lastChance: boolean
   editing: boolean
   order: Order
   over: string | null
@@ -97,10 +123,6 @@ function Bucket({
     return availAtTarget(e.playerId) ?? 2
   }
   const shown = order === 'sheet' ? visible : [...visible].sort((a, b) => score(b) - score(a))
-  // How many of this bucket should still be on the board at your next pick.
-  const ids = [...new Set(open.flatMap((e) => (e.playerId === null ? [] : [e.playerId])))]
-  const expected = draft.target ? ids.reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null
-
   const onDrop = (e: DragEvent, beforeEntry: string | null) => {
     e.preventDefault()
     e.stopPropagation()
@@ -137,16 +159,17 @@ function Bucket({
           />
         ) : (
           <span
-            className={`font-semibold ${current ? 'text-amber-300' : open.length ? 'text-zinc-100' : 'text-zinc-600'}`}
+            className={`shrink-0 whitespace-nowrap font-semibold ${current ? 'text-amber-300' : open.length ? 'text-zinc-100' : 'text-zinc-600'}`}
             onClick={() => editing && setRenaming(true)}
           >
             {section.name}
           </span>
         )}
-        <span className="text-zinc-500">{open.length} left</span>
+        <span className="shrink-0 whitespace-nowrap text-zinc-500">{open.length} left</span>
         {expected !== null && open.length > 0 && (
-          <span className={expected < 1 ? 'text-rose-400' : expected < 2 ? 'text-amber-300' : 'text-zinc-600'}>
+          <span className={`shrink-0 whitespace-nowrap ${lastChance ? 'font-semibold text-rose-400' : expected < 1 ? 'text-rose-400' : expected < 2 ? 'text-amber-300' : 'text-zinc-600'}`}>
             ~{expected.toFixed(1)} at #{draft.target}
+            {lastChance && ' · take one now'}
           </span>
         )}
         {section.note && <span className="truncate text-[11px] text-zinc-600">{section.note}</span>}
@@ -189,7 +212,7 @@ function Row({
   setOver: (id: string | null) => void
   onDrop: (e: DragEvent) => void
 }) {
-  const { byId, allPlayers, draft, availAtTarget, teams } = useModel()
+  const { byId, allPlayers, draft, availAtTarget, teams, slots, topFit } = useModel()
   const { mySlot, teamAbbrevs, selectedId, set, draft: draftPlayer, removeEntry, espn } = useDraft()
 
   const dragProps: DragProps = {
@@ -230,6 +253,11 @@ function Row({
       </span>
       {entry.tag && <span className="shrink-0 text-[11px] text-sky-400">{entry.tag}</span>}
       {!taken && <Injury status={player?.injury ?? null} />}
+      {!taken && player && slots.tight && !slots.fills(player.pos) && (
+        <span className="shrink-0 text-[11px] text-rose-400" title={`You still need ${slots.open.join(', ')} and are running out of picks`}>
+          no slot
+        </span>
+      )}
       <span className="ml-auto flex shrink-0 text-right">
         {taken ? (
           <span className={`w-[124px] ${mine ? 'text-emerald-400' : 'text-zinc-600'}`}>
@@ -238,7 +266,10 @@ function Row({
         ) : (
           <>
             <span className="w-10 text-zinc-300">{v ? v.value.toFixed(1) : '-'}</span>
-            <span className={`w-11 ${fit !== undefined && fit > 0 ? 'text-zinc-400' : 'text-zinc-600'}`}>
+            <span
+              className={`w-11 ${topFit.has(id) ? 'font-semibold text-amber-300' : fit !== undefined && fit > 0 ? 'text-zinc-400' : 'text-zinc-600'}`}
+              title={topFit.has(id) ? 'Top 3 fit for your team' : undefined}
+            >
               {fit === undefined ? '' : signed(fit, 2)}
             </span>
             <span className="w-10">

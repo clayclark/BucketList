@@ -19,6 +19,7 @@ type State = {
   teamNames: string[]
   teamAbbrevs: string[]
   draftDate: number | null
+  starters: string[]
   punts: Cat[]
   basis: BasisKey
   totals: boolean
@@ -62,6 +63,7 @@ export const useDraft = create<State & Actions>()(
       teamNames: defaultNames(10),
       teamAbbrevs: defaultNames(10).map((_, i) => `T${i + 1}`),
       draftDate: null,
+      starters: ['PG', 'SG', 'SF', 'PF', 'C', 'G', 'F'],
       punts: [],
       basis: 'proj',
       totals: false,
@@ -110,6 +112,7 @@ export const useDraft = create<State & Actions>()(
           teamNames: order.map((id) => byId.get(id)?.name ?? `Team ${id}`),
           teamAbbrevs: order.map((id) => byId.get(id)?.abbrev ?? `T${id}`),
           draftDate: league.draftDate,
+          starters: league.starters,
           mySlot: mine >= 0 ? mine : s.mySlot,
           pickOwners: league.owners.length ? league.owners.map((id) => Math.max(0, order.indexOf(id))) : null,
           picks: league.made.map((p) => ({

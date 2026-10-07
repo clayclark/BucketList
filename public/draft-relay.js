@@ -1,25 +1,32 @@
-// Saves the live draft (picks in order, who's on the clock) to extension storage for the side panel.
+// Saves the draft room's live feed for the side panel: the latest INIT snapshot (whole board, sent on
+// every join or reload), pick lines since then, and who's on the clock. The panel does the parsing.
 ;(() => {
-  let state = null
-  let writing = Promise.resolve()
-  const save = () => (writing = writing.then(() => chrome.storage.local.set({ liveDraft: state })))
+  let state // undefined until loaded from storage
+  let queue = Promise.resolve()
 
-  window.addEventListener('message', async (e) => {
-    const msg = e.data
-    if (e.source !== window || !msg?.__hoopsDraft) return
-    if (!state) state = (await chrome.storage.local.get('liveDraft')).liveDraft ?? null
-    if (!state || state.leagueId !== msg.leagueId) state = { leagueId: msg.leagueId, picks: [], clock: null, done: false, seen: 0 }
-
-    const [kind, a, b] = msg.line.split(' ')
+  // One message at a time: INIT and a pick can land together on reload, and must not overwrite each other.
+  const handle = async ({ leagueId, line }) => {
+    if (state === undefined) state = (await chrome.storage.local.get('liveDraft')).liveDraft ?? null
+    if (!state || state.leagueId !== leagueId || !Array.isArray(state.lines)) {
+      state = { leagueId, init: null, lines: [], clock: null, done: false, seen: 0 }
+    }
+    const [kind, a, b] = line.split(' ')
     const now = Date.now()
+    if (kind === 'INIT') {
+      state.init = a
+      state.lines = []
+    }
     if (kind === 'SELECTED') {
-      const pick = { teamId: Number(a), playerId: Number(b) }
-      if (!state.picks.some((p) => p.playerId === pick.playerId)) state.picks = [...state.picks, pick]
+      if (!state.lines.includes(line)) state.lines = [...state.lines, line]
       state.clock = null
     }
     if (kind === 'SELECTING' || kind === 'CLOCK') state.clock = { teamId: Number(a), endsAt: now + Number(b) }
     if (kind === 'STATE') state.done = a === '2'
     state.seen = now
-    save()
+    await chrome.storage.local.set({ liveDraft: state })
+  }
+
+  window.addEventListener('message', (e) => {
+    if (e.source === window && e.data?.__hoopsDraft) queue = queue.then(() => handle(e.data)).catch(console.error)
   })
 })()
