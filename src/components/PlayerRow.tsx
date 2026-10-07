@@ -84,7 +84,7 @@ export function PlayerRow({
           ) : (
             <>
               {v && <Fingerprint z={v.z} punts={punts} detailed={detailed} />}
-              <span className="hidden w-9 text-zinc-300 lg:inline">{v ? v.value.toFixed(1) : '-'}</span>
+              <span className="w-8 text-zinc-300">{v ? v.value.toFixed(1) : '-'}</span>
               <span
                 className={`w-10 ${topFit.has(id) ? 'font-semibold text-amber-300' : fit !== undefined && fit > 0 ? 'text-zinc-400' : 'text-zinc-600'}`}
                 title={topFit.has(id) ? 'Top 3 fit for your team' : 'Extra categories won per matchup'}

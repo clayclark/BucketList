@@ -71,7 +71,7 @@ export function Players() {
                 </span>
               ))}
             </span>
-            {sortBtn('value', 'Val', 'hidden w-9 lg:inline')}
+            {sortBtn('value', 'Val', 'w-8')}
             {sortBtn('fit', 'Fit', 'w-10')}
             {sortBtn('avail', draft.target ? `#${draft.target}` : 'Left', 'w-9')}
           </span>

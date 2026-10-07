@@ -68,7 +68,7 @@ export function Buckets() {
         </button>
         {players.isPending && <span>Loading players…</span>}
         <span className="ml-auto flex gap-2">
-          {col('value', 'Val', 'hidden w-9 lg:inline', 'Value: 9-cat z-score total')}
+          {col('value', 'Val', 'w-8', 'Value: total of your non-punted categories')}
           {col('fit', 'Fit', 'w-10', 'Fit: extra categories won per matchup')}
           {col('avail', draft.target ? `#${draft.target}` : 'Left', 'w-9', "Chance he's still there at your next pick")}
           {editing && <span className="w-3" />}
