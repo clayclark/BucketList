@@ -1,6 +1,6 @@
 <img src="public/icon.svg" width="64" height="64" alt="">
 
-# Hoops Draft
+# Bucket List
 
 Live draft companion for ESPN 9-cat H2H fantasy basketball, as a Chrome/Helium side panel extension.
 

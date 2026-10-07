@@ -9,7 +9,7 @@
       const leagueId = String(url).match(/fantasydraft\.espn\.com\/.*league-(\d+)/)?.[1]
       if (!leagueId) return
       this.addEventListener('message', (e) => {
-        if (typeof e.data === 'string' && KEEP.test(e.data)) window.postMessage({ __hoopsDraft: true, leagueId, line: e.data.trim() }, '*')
+        if (typeof e.data === 'string' && KEEP.test(e.data)) window.postMessage({ __bucketList: true, leagueId, line: e.data.trim() }, '*')
       })
     }
   }

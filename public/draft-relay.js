@@ -27,6 +27,6 @@
   }
 
   window.addEventListener('message', (e) => {
-    if (e.source === window && e.data?.__hoopsDraft) queue = queue.then(() => handle(e.data)).catch(console.error)
+    if (e.source === window && e.data?.__bucketList) queue = queue.then(() => handle(e.data)).catch(console.error)
   })
 })()
