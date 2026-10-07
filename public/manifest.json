@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "Hoops Draft",
+  "version": "0.1.0",
+  "description": "Live 9-cat draft companion for ESPN fantasy basketball.",
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "action": {
+    "default_title": "Open Hoops Draft"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "sidePanel",
+    "cookies",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://lm-api-reads.fantasy.espn.com/*",
+    "https://*.espn.com/*",
+    "https://www.fantrax.com/*",
+    "https://docs.google.com/*",
+    "https://*.googleusercontent.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://fantasy.espn.com/*"
+      ],
+      "js": [
+        "draft-socket.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://fantasy.espn.com/*"
+      ],
+      "js": [
+        "draft-relay.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

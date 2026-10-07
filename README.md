@@ -1,5 +1,31 @@
-<img src="assets/icon.svg" width="64" height="64" alt="">
+<img src="public/icon.svg" width="64" height="64" alt="">
 
-# FantasyHoopsDraft
+# Hoops Draft
 
-Created in [T3 Code](https://t3.codes).
+Live draft companion for ESPN 9-cat H2H fantasy basketball, as a Chrome/Helium side panel extension.
+
+## Install
+
+```sh
+pnpm install
+pnpm build
+```
+
+Then in Helium (or Chrome): open `helium://extensions` (`chrome://extensions`), turn on Developer mode, **Load unpacked**, and pick the `dist` folder. Click the toolbar icon to open the side panel next to the ESPN draft room. `⤢` opens it in a full tab.
+
+Be logged in to espn.com in the same browser. The extension reads your private league with that login and finds your team from it. If the panel shows an **Allow** banner, the browser is withholding site access (Helium can); allow it and reload the ESPN tab. After code changes, `pnpm build` and hit reload on the extensions page.
+
+**On draft night, open the ESPN draft room before the draft starts.** Picks come from the draft room itself: ESPN's league API doesn't update during a draft, so the extension reads the room's live pick feed. ESPN's practice drafts work the same way and make a full rehearsal.
+
+## What's in it
+
+- **Targets**: your bucket sheet. Taken players drop out, each bucket shows how many are left and how many should still be there at your next pick (red means take one now). Sort within buckets by value, fit or availability. Edit mode re-tiers by drag and drop.
+- **Players**: everyone, with 9-cat z-scores, sortable.
+- **Team**: your category ranks, punt toggles, positions, upcoming picks.
+- **League**: category standings with your expected record against each team, the draft board, rosters.
+
+Values are z-scores against the top `teams × roster` players from ESPN's projections. ADP comes from Fantrax. Fit is how many more categories per week a player is expected to win you, given your roster. Picks arrive live from the open draft room and land on ESPN's real pick order (traded picks, third-round reversal), with keepers placed at their reserved picks. Turn sync off in Setup to enter picks by hand (search + Enter, Cmd+Z to undo).
+
+## Dev
+
+`pnpm dev` runs the same UI at http://localhost:5173. To reach a private league there, put `ESPN_S2` and `ESPN_SWID` (your espn.com cookies) in `.env.local`; the dev server proxies them. They never reach the built extension.
