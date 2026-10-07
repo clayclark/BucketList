@@ -1,23 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { AccessBanner } from './components/AccessBanner'
+import { Buckets } from './components/Buckets'
 import { ClockBar } from './components/ClockBar'
+import { DraftRoomCheck } from './components/DraftRoomCheck'
 import { LeagueView } from './components/LeagueView'
 import { PlayerDetail } from './components/PlayerDetail'
-import { PlayersTable } from './components/PlayersTable'
+import { Players } from './components/Players'
 import { RecentPicks } from './components/RecentPicks'
 import { Search } from './components/Search'
 import { Setup } from './components/Setup'
+import { TeamStrip } from './components/TeamStrip'
 import { TeamView } from './components/TeamView'
-import { Targets } from './components/Targets'
 import { espnSwid, fetchLeague } from './lib/espn'
 import { livePicks, mergeLivePicks, type LiveDraft } from './lib/live'
 import { importSheet } from './lib/importSheet'
 import { useModel } from './model'
-import { useDraft } from './store'
+import { useDraft, type Tab } from './store'
 
-const TABS = { Targets, Players: PlayersTable, Team: TeamView, League: LeagueView, Setup } as const
-export type Tab = keyof typeof TABS
+const TABS: Record<Tab, ComponentType> = { Buckets, Players, Team: TeamView, League: LeagueView, Setup }
+const LIST_TABS: Tab[] = ['Buckets', 'Players']
 
 const LIVE_FRESH_MS = 90_000
 
@@ -92,7 +94,8 @@ function useShortcuts() {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('Targets')
+  const tab = useDraft((s) => s.tab)
+  const setTab = (t: Tab) => useDraft.getState().set({ tab: t })
   const live = useLiveDraft()
   const { league, practice } = useLeagueSync(live)
   const selectedId = useDraft((s) => s.selectedId)
@@ -103,32 +106,44 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       <AccessBanner />
+      <DraftRoomCheck live={live} />
       <ClockBar syncError={league.error?.message ?? null} synced={league.isSuccess} live={live} practice={practice} />
+      <TeamStrip />
       <nav className="flex h-8 shrink-0 items-center gap-3 border-b border-zinc-900 px-3">
-        {(Object.keys(TABS) as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`h-full border-b ${t === tab ? 'border-zinc-200 text-zinc-100' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
-          >
-            {t}
-          </button>
-        ))}
+        {(Object.keys(TABS) as Tab[])
+          .filter((t) => t !== 'Setup')
+          .map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`h-full border-b ${t === tab ? 'border-zinc-200 text-zinc-100' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+            >
+              {t}
+            </button>
+          ))}
         <Search />
+        <button
+          title="Setup"
+          onClick={() => setTab('Setup')}
+          className={`h-full border-b text-base ${tab === 'Setup' ? 'border-zinc-200 text-zinc-100' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+        >
+          ⚙
+        </button>
       </nav>
       <div className="flex min-h-0 flex-1">
         <main className="min-w-0 flex-1 overflow-auto">
           <View />
         </main>
-        {/* Wide (full tab): detail docks on the right. Narrow (side panel): it's a bottom sheet. */}
-        <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-zinc-900 lg:block">
-          {selectedId !== null ? <PlayerDetail /> : <div className="p-3 text-zinc-600">Select a player</div>}
+        {/* Wide (full tab): details dock on the right. Narrow (side panel): lists expand rows in place,
+            other tabs use a bottom sheet. */}
+        <aside className="hidden w-[380px] shrink-0 overflow-y-auto border-l border-zinc-900 lg:block">
+          {selectedId !== null ? <PlayerDetail variant="aside" /> : <div className="p-3 text-zinc-600">Select a player</div>}
           <RecentPicks />
         </aside>
       </div>
-      {selectedId !== null && (
-        <div className="max-h-[55%] shrink-0 overflow-y-auto border-t border-zinc-700 bg-black lg:hidden">
-          <PlayerDetail closable />
+      {selectedId !== null && !LIST_TABS.includes(tab) && (
+        <div className="max-h-[45%] shrink-0 overflow-y-auto border-t border-zinc-700 bg-black lg:hidden">
+          <PlayerDetail variant="sheet" />
         </div>
       )}
     </div>

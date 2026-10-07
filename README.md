@@ -19,9 +19,11 @@ Be logged in to espn.com in the same browser. The extension reads your private l
 
 ## What's in it
 
-- **Targets**: your bucket sheet. Taken players drop out, each bucket shows how many are left and how many should still be there at your next pick. Near your pick, the highest bucket that won't last says "take one now". The three best fits for your team are highlighted, and once your picks run short, players who can't fill an open starting slot are flagged. Sort within buckets by value, fit or availability. Edit mode re-tiers by drag and drop.
-- **Players**: everyone, with 9-cat z-scores, sortable.
-- **Team**: your category ranks, punt toggles, positions, upcoming picks.
+- **Category strip**: your rank in each of the 9 categories, always under the clock. Hover or select an available player to preview how drafting him moves each rank.
+- **Buckets**: your bucket sheet. Taken players drop out, and each bucket says how many should still be there at your next pick. Near your pick, the highest bucket that won't last says "take one now", players who'll likely come back say "can wait", and a line lists who's likely still there next time. The three best fits for your team are highlighted. Edit mode re-tiers by drag and drop.
+- **Players**: everyone, on the same rows, sortable by value, fit, ADP or availability.
+- **Every player row**: a 9-cell category heat strip, fit, and the chance he's back at your next pick. Click to expand details in place, including exactly which of your ranks he changes.
+- **Team**: category ranks with punt toggles, and your roster placed into your league's lineup slots.
 - **League**: category standings with your expected record against each team, the draft board, rosters.
 
 Values are z-scores against the top `teams × roster` players from ESPN's projections. ADP comes from Fantrax. Fit is how many more categories per week a player is expected to win you, given your roster. Picks arrive live from the open draft room and land on ESPN's real pick order (traded picks, third-round reversal), with keepers placed at their reserved picks. Turn sync off in Setup to enter picks by hand (search + Enter, Cmd+Z to undo).

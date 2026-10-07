@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fmtDraftDate, ordinal, textBtn } from '../format'
+import { fmtDraftDate, ordinal, textBtn, untilText } from '../format'
 import type { LiveDraft } from '../lib/live'
 import { useModel } from '../model'
 import { useDraft } from '../store'
@@ -14,6 +14,21 @@ function Countdown({ endsAt }: { endsAt: number }) {
   }, [])
   const s = Math.max(0, Math.round((endsAt - now) / 1000))
   return <span className="tabular-nums">{s}s</span>
+}
+
+function DraftCountdown({ at }: { at: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(tick)
+  }, [])
+  return (
+    <>
+      Draft {fmtDraftDate(at)}
+      {at > now && <span className="text-zinc-300"> · in {untilText(at - now)}</span>}
+      {' · '}
+    </>
+  )
 }
 
 export function ClockBar({
@@ -101,7 +116,7 @@ export function ClockBar({
           </span>
         ) : (
           <span>
-            {draftDate ? `Draft ${fmtDraftDate(draftDate)} · ` : ''}You pick {ordinal(next ?? mySlot + 1)}
+            {draftDate ? <DraftCountdown at={draftDate} /> : null}You pick {ordinal(next ?? mySlot + 1)}
           </span>
         )}
         <span className="ml-auto shrink-0">

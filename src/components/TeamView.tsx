@@ -1,14 +1,13 @@
 import { fmtCat, ordinal, rankStyle, textBtn } from '../format'
 import { CAT_LABEL, CATS, type Cat } from '../lib/cats'
-import { expectedWins, teamTotals } from '../lib/value'
+import { assignSlots } from '../lib/slots'
+import { expectedWins, teamTotals, type Valued } from '../lib/value'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 
-const POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C']
-
 export function TeamView() {
   const { teams, draft, slots } = useModel()
-  const { mySlot, teamNames, punts, togglePunt, set, totals } = useDraft()
+  const { mySlot, teamNames, punts, togglePunt, set, totals, starters } = useDraft()
   const roster = teams.rosters[mySlot] ?? []
   const mine = teams.strengths[mySlot]
   if (!mine) return null
@@ -18,7 +17,8 @@ export function TeamView() {
   const others = teams.strengths.filter((_, i) => i !== mySlot)
   const record = others.length ? others.reduce((w, o) => w + expectedWins(mine, o, CATS), 0) / others.length : 0
   const raw = teamTotals(roster.map((v) => v.line))
-  const posCount = (p: string) => roster.filter((v) => v.player.pos.split('/').includes(p)).length
+  const holder = assignSlots(starters, roster.map((v) => v.player.pos.split('/')))
+  const flex = roster.filter((_, i) => !holder.includes(i))
 
   return (
     <div className="space-y-4 p-3">
@@ -66,39 +66,20 @@ export function TeamView() {
       </table>
       <p className="text-[11px] text-zinc-600">Open roster spots count as replacement-level players. Punts re-rank every player.</p>
 
-      <div className="flex flex-wrap gap-x-3 text-zinc-500">
-        {POSITIONS.map((p) => (
-          <span key={p}>
-            {p} <span className={posCount(p) ? 'text-zinc-200' : 'text-rose-400'}>{posCount(p)}</span>
-          </span>
-        ))}
-        <span className="ml-auto">
-          {slots.open.length ? (
-            <>
-              Open starters <span className={slots.tight ? 'text-rose-400' : 'text-zinc-200'}>{slots.open.join(' · ')}</span>
-            </>
-          ) : (
-            'Starters filled'
-          )}
-        </span>
-      </div>
-
       <div>
-        {roster.map((v) => {
-          const k = draft.drafted.get(v.player.id)
-          return (
-            <button
-              key={v.player.id}
-              className="flex h-6 w-full items-center gap-2 text-left hover:bg-zinc-950"
-              onClick={() => set({ selectedId: v.player.id })}
-            >
-              <span className="w-8 text-zinc-600">{k?.keeper ? 'K' : `#${k?.pick}`}</span>
-              <span className="text-emerald-400">{v.player.name}</span>
-              <span className="text-zinc-500">{v.player.pos}</span>
-              <span className="ml-auto text-zinc-300">{v.value.toFixed(1)}</span>
-            </button>
-          )
+        <div className="flex border-b border-zinc-800 pb-0.5 text-[11px] text-zinc-500">
+          <span>Lineup</span>
+          <span className={`ml-auto ${slots.tight ? 'text-rose-400' : ''}`}>
+            {slots.open.length ? `Open: ${slots.open.join(' · ')}` : 'Starters filled'}
+          </span>
+        </div>
+        {starters.map((slot, i) => {
+          const v = holder[i] === undefined ? undefined : roster[holder[i]!]
+          return <LineupRow key={i} slot={slot} v={v} pick={v && draft.drafted.get(v.player.id)} onSelect={(id) => set({ selectedId: id })} />
         })}
+        {flex.map((v) => (
+          <LineupRow key={v.player.id} slot="UTIL" v={v} pick={draft.drafted.get(v.player.id)} onSelect={(id) => set({ selectedId: id })} />
+        ))}
         {draft.mine.length > 0 && (
           <div className="mt-2 text-zinc-600">
             Your picks: <span className="text-zinc-400">{draft.mine.join(' · ')}</span>
@@ -106,5 +87,34 @@ export function TeamView() {
         )}
       </div>
     </div>
+  )
+}
+
+function LineupRow({
+  slot,
+  v,
+  pick,
+  onSelect,
+}: {
+  slot: string
+  v: Valued | undefined
+  pick: { pick: number; keeper: boolean } | undefined
+  onSelect: (id: number) => void
+}) {
+  if (!v)
+    return (
+      <div className="flex h-6 items-center gap-2">
+        <span className="w-10 text-zinc-500">{slot}</span>
+        <span className="text-rose-400">Empty</span>
+      </div>
+    )
+  return (
+    <button className="flex h-6 w-full items-center gap-2 text-left hover:bg-zinc-950" onClick={() => onSelect(v.player.id)}>
+      <span className="w-10 text-zinc-500">{slot}</span>
+      <span className="text-emerald-400">{v.player.name}</span>
+      <span className="text-zinc-500">{v.player.pos}</span>
+      <span className="ml-auto text-zinc-600">{pick?.keeper ? 'K' : pick ? `#${pick.pick}` : ''}</span>
+      <span className="w-8 text-right text-zinc-300">{v.value.toFixed(1)}</span>
+    </button>
   )
 }

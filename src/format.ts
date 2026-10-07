@@ -22,3 +22,12 @@ export const fmtDraftDate = (ms: number) =>
 
 export const input = 'bg-black border border-zinc-800 px-1.5 py-0.5 text-zinc-200 outline-none focus:border-zinc-500'
 export const textBtn = 'text-zinc-500 hover:text-zinc-200 disabled:text-zinc-800'
+
+/** "2d 4h", "3h 12m", "12m" until a future time. */
+export const untilText = (ms: number) => {
+  const mins = Math.max(0, Math.round(ms / 60000))
+  const d = Math.floor(mins / 1440)
+  const h = Math.floor((mins % 1440) / 60)
+  const m = mins % 60
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`
+}

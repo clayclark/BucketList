@@ -31,7 +31,12 @@ type State = {
   picks: Pick[]
   sections: Section[]
   selectedId: number | null
+  /** Player being hovered, previewed in the category strip. Not persisted. */
+  previewId: number | null
+  tab: Tab
 }
+
+export type Tab = 'Buckets' | 'Players' | 'Team' | 'League' | 'Setup'
 
 type Actions = {
   set: (patch: Partial<State>) => void
@@ -52,7 +57,7 @@ type Actions = {
   removeSection: (id: string) => void
 }
 
-type Persisted = Omit<State, 'selectedId'>
+type Persisted = Omit<State, 'selectedId' | 'previewId' | 'tab'>
 
 export const useDraft = create<State & Actions>()(
   persist<State & Actions, [], [], Persisted>(
@@ -74,6 +79,8 @@ export const useDraft = create<State & Actions>()(
       picks: [],
       sections: [],
       selectedId: null,
+      previewId: null,
+      tab: 'Buckets',
 
       set: (patch) => set(patch),
 
@@ -190,7 +197,7 @@ export const useDraft = create<State & Actions>()(
         const s = persisted as Persisted
         return { ...s, espn: { leagueId: s.espn.leagueId, sync: s.espn.sync } }
       },
-      partialize: ({ selectedId: _, ...rest }) => rest,
+      partialize: ({ selectedId: _, previewId: __, tab: ___, ...rest }) => rest,
     },
   ),
 )

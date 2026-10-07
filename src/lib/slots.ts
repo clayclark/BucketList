@@ -11,8 +11,8 @@ export const startersFrom = (slotCounts: Record<string, number>) =>
 const fits = (slot: string, positions: string[]) =>
   slot.split('/').some((part) => (COVERS[part] ?? [part]).some((p) => positions.includes(p)))
 
-/** Starting slots the roster can't fill, using the best possible assignment (bipartite matching). */
-export function openSlots(starters: string[], roster: string[][]): string[] {
+/** Best assignment of roster players (by index) to starting slots, via bipartite matching. */
+export function assignSlots(starters: string[], roster: string[][]): (number | undefined)[] {
   const holder: (number | undefined)[] = starters.map(() => undefined)
   const place = (player: number, seen: Set<number>): boolean =>
     starters.some((slot, s) => {
@@ -26,5 +26,11 @@ export function openSlots(starters: string[], roster: string[][]): string[] {
       return false
     })
   roster.forEach((_, player) => place(player, new Set()))
+  return holder
+}
+
+/** Starting slots the roster can't fill, even with the best assignment. */
+export const openSlots = (starters: string[], roster: string[][]) => {
+  const holder = assignSlots(starters, roster)
   return starters.filter((_, s) => holder[s] === undefined)
 }

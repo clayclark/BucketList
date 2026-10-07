@@ -1,12 +1,17 @@
-import { fmtCat, input, signed, textBtn, zStyle } from '../format'
+import type { ReactNode } from 'react'
+import { fmtCat, input, ordinal, signed, textBtn, zStyle } from '../format'
 import { CAT_LABEL, CATS } from '../lib/cats'
 import { teamTotals } from '../lib/value'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 import { Avail, Injury } from '../ui'
 
-export function PlayerDetail({ closable = false }: { closable?: boolean }) {
-  const { byId, allPlayers, draft, availAtTarget, teams, tiersByPlayer } = useModel()
+/**
+ * Player details. `inline` sits under an expanded row (the row already shows the name),
+ * `sheet` is the narrow panel's bottom sheet, `aside` is the wide layout's side column.
+ */
+export function PlayerDetail({ variant }: { variant: 'inline' | 'sheet' | 'aside' }) {
+  const { byId, allPlayers, draft, availAtTarget, teams, tiersByPlayer, ranks } = useModel()
   const { selectedId, teamNames, mySlot, espn, sections, set, draft: draftPlayer, removePick, addEntry } = useDraft()
   const player = selectedId === null ? undefined : allPlayers.get(selectedId)
   if (!player) return null
@@ -16,41 +21,47 @@ export function PlayerDetail({ closable = false }: { closable?: boolean }) {
   const taken = draft.drafted.get(id)
   const fit = teams.fit.get(id)
   const tiers = tiersByPlayer.get(id) ?? []
-  const avail = availAtTarget(id)
+  const after = !taken ? ranks.withPlayer(id) : null
+  const changes = after && ranks.now ? CATS.filter((c) => after[c] !== ranks.now![c]).sort((a, b) => ranks.now![b] - after[b] - (ranks.now![a] - after[a])) : []
+
+  const stat = (label: string, value: ReactNode) => (
+    <span className="whitespace-nowrap">
+      <span className="text-zinc-500">{label} </span>
+      <span className="text-zinc-100">{value}</span>
+    </span>
+  )
 
   return (
-    <div className="space-y-2 p-3">
-      <div className="flex items-baseline gap-2">
-        <span className="truncate text-base font-semibold text-white">{player.name}</span>
-        <span className="shrink-0 text-zinc-500">
-          {player.team} · {player.pos}
-        </span>
-        <Injury status={player.injury} />
-        {closable && (
-          <button className={`${textBtn} ml-auto px-1 text-base`} onClick={() => set({ selectedId: null })}>
-            ×
-          </button>
-        )}
-      </div>
+    <div className={variant === 'inline' ? 'space-y-1.5 pt-1' : 'space-y-1.5 px-3 py-2'}>
+      {variant !== 'inline' && (
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-sm font-semibold text-white">{player.name}</span>
+          <span className="shrink-0 text-zinc-500">
+            {player.team} · {player.pos}
+          </span>
+          <Injury status={player.injury} />
+          {variant === 'sheet' && (
+            <button className={`${textBtn} ml-auto px-1 text-base leading-none`} onClick={() => set({ selectedId: null })}>
+              ×
+            </button>
+          )}
+        </div>
+      )}
 
-      <dl className="grid grid-cols-5 gap-x-2 text-center">
-        {[
-          ['Rank', v?.rank ?? '-'],
-          ['Value', v?.value.toFixed(1) ?? '-'],
-          ['Fit', fit === undefined ? '-' : signed(fit, 2)],
-          ['ADP', player.adp?.toFixed(1) ?? '-'],
-          [draft.target ? `@${draft.target}` : 'Left', taken ? '-' : <Avail key="a" p={avail} />],
-        ].map(([label, value]) => (
-          <div key={String(label)}>
-            <dt className="text-[11px] text-zinc-500">{label}</dt>
-            <dd className="text-sm text-zinc-100">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="flex flex-wrap gap-x-3">
+        {variant === 'inline' && <span className="text-zinc-500">{player.team} · {player.pos}</span>}
+        {stat('Val', v?.value.toFixed(1) ?? '-')}
+        {stat('Fit', fit === undefined ? '-' : signed(fit, 2))}
+        {stat('ADP', player.adp?.toFixed(1) ?? '-')}
+        {!taken && draft.target && stat(`#${draft.target}`, <Avail p={availAtTarget(id)} />)}
+        {v && stat('GP', v.gp.toFixed(0))}
+        {v && stat('MIN', v.min.toFixed(1))}
+        {v && stat('Rank', v.rank)}
+      </div>
 
       {v && raw && (
         <table className="w-full table-fixed text-center">
-          <thead className="text-[11px] text-zinc-500">
+          <thead className="text-[10px] text-zinc-500">
             <tr>
               {CATS.map((c) => (
                 <th key={c} className="font-normal">
@@ -62,12 +73,12 @@ export function PlayerDetail({ closable = false }: { closable?: boolean }) {
           <tbody>
             <tr>
               {CATS.map((c) => (
-                <td key={c} className="py-0.5" style={zStyle(v.z[c])}>
+                <td key={c} style={zStyle(v.z[c])}>
                   {v.z[c].toFixed(1)}
                 </td>
               ))}
             </tr>
-            <tr className="text-zinc-500">
+            <tr className="text-[11px] text-zinc-500">
               {CATS.map((c) => (
                 <td key={c}>{fmtCat(c, raw[c])}</td>
               ))}
@@ -76,21 +87,33 @@ export function PlayerDetail({ closable = false }: { closable?: boolean }) {
         </table>
       )}
 
-      <div className="flex flex-wrap gap-x-3 text-zinc-500">
-        {v && (
-          <span>
-            {v.gp.toFixed(0)} GP · {v.min.toFixed(1)} MIN
-          </span>
-        )}
+      {after && ranks.now && (
+        <div className="text-zinc-500">
+          {changes.length === 0 ? (
+            'No change to your category ranks'
+          ) : (
+            <>
+              Your ranks:{' '}
+              {changes.map((c, i) => (
+                <span key={c}>
+                  {i > 0 && ' · '}
+                  <span className={after[c] < ranks.now![c] ? 'text-emerald-400' : 'text-rose-400'}>
+                    {CAT_LABEL[c]} {ordinal(ranks.now![c])}→{ordinal(after[c])}
+                  </span>
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {tiers.map(({ section, entry }) => (
           <span key={entry.id} className="text-zinc-300">
             {section.name}
             {entry.tag && <span className="text-sky-400"> {entry.tag}</span>}
           </span>
         ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
         {taken ? (
           <>
             <span className={taken.slot === mySlot ? 'text-emerald-400' : 'text-zinc-400'}>

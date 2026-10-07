@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
-import type { CatLine } from './lib/cats'
+import { CATS, type Cat, type CatLine } from './lib/cats'
 import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
 import { fetchFantraxAdp } from './lib/fantrax'
@@ -66,8 +66,22 @@ function useBuildModel() {
       replacement,
       activeCats(punts),
     )
-    return { rosters, strengths, available, fit }
+    return { rosters, strengths, available, fit, replacement }
   }, [valued, byId, picks, teamCount, rosterSize, mySlot, poolSize, punts, draft])
+
+  // My category ranks now, and what they'd be with a given player added.
+  const ranks = useMemo(() => {
+    const others = teams.strengths.filter((_, i) => i !== mySlot)
+    const rankOf = (team: CatLine) =>
+      Object.fromEntries(CATS.map((c) => [c, 1 + others.filter((o) => o[c] > team[c]).length])) as Record<Cat, number>
+    const mineZ = (teams.rosters[mySlot] ?? []).map((v) => v.z)
+    const now = teams.strengths[mySlot] ? rankOf(teams.strengths[mySlot]) : null
+    const withPlayer = (id: number) => {
+      const v = byId.get(id)
+      return v ? rankOf(teamStrength([...mineZ, v.z], rosterSize, teams.replacement)) : null
+    }
+    return { now, withPlayer, teams: teams.strengths.length }
+  }, [teams, mySlot, byId, rosterSize])
 
   // Starting slots my roster can't fill yet. Once my remaining picks only just cover them, a player who
   // fills none of them costs a starter.
@@ -107,7 +121,7 @@ function useBuildModel() {
     [allPlayers, draft],
   )
 
-  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, slots, topFit, tiersByPlayer, availAtTarget, cats: activeCats(punts) }
+  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

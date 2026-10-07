@@ -3,8 +3,8 @@ import { useModel } from '../model'
 import { useDraft } from '../store'
 
 export function Search() {
-  const { valued, draft } = useModel()
-  const { set, draft: draftPlayer, espn } = useDraft()
+  const { valued, draft, tiersByPlayer } = useModel()
+  const { set, draft: draftPlayer, espn, tab, showTaken } = useDraft()
   const [q, setQ] = useState('')
   const [cursor, setCursor] = useState(0)
 
@@ -16,7 +16,11 @@ export function Search() {
   // Enter drafts in manual mode (no detail sheet in the way); otherwise it opens the player.
   const pick = (id: number, andDraft: boolean) => {
     if (andDraft && !espn.sync && !draft.drafted.has(id)) draftPlayer(id)
-    else set({ selectedId: id })
+    else {
+      // Buckets only shows your tiered, available players; anyone else opens in Players.
+      const onBuckets = tiersByPlayer.has(id) && (showTaken || !draft.drafted.has(id))
+      set({ selectedId: id, ...(tab === 'Buckets' && !onBuckets ? { tab: 'Players' as const } : {}) })
+    }
     setQ('')
   }
 

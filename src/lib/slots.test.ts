@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { openSlots, startersFrom } from './slots'
+import { assignSlots, openSlots, startersFrom } from './slots'
 
 describe('slots', () => {
   it('reads starting slots and ignores UTIL, bench and IR', () => {
@@ -12,5 +12,9 @@ describe('slots', () => {
     expect(openSlots(starters, [['PF', 'C'], ['C']])).toEqual(['G'])
     expect(openSlots(starters, [['PG'], ['SF'], ['C']])).toEqual([])
     expect(openSlots(starters, [['PG'], ['SG']])).toEqual(['C', 'F'])
+  })
+
+  it('reports who plays which slot', () => {
+    expect(assignSlots(['C', 'G', 'F'], [['PF', 'C'], ['C'], ['SG']])).toEqual([1, 2, 0])
   })
 })
