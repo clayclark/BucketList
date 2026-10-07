@@ -1,5 +1,6 @@
 import { fmtCat, ordinal, rankStyle, textBtn } from '../format'
 import { CAT_LABEL, CATS } from '../lib/cats'
+import { puntAdvice } from '../lib/punt'
 import { assignSlots } from '../lib/slots'
 import { expectedWins, teamTotals, type Valued } from '../lib/value'
 import { useModel } from '../model'
@@ -17,6 +18,13 @@ export function TeamView() {
   const others = teams.strengths.filter((_, i) => i !== mySlot)
   const record = others.length ? others.reduce((w, o) => w + expectedWins(mine, o, CATS), 0) / others.length : 0
   const raw = teamTotals(roster.map((v) => v.line))
+  const advice = puntAdvice({
+    mine,
+    opponents: others,
+    topAvailable: teams.available.slice(0, 20).map((v) => v.z),
+    punts,
+    rosterCount: roster.length,
+  })
   const holder = assignSlots(starters, roster.map((v) => v.player.pos.split('/')))
   const flex = roster.filter((_, i) => !holder.includes(i))
 
@@ -27,6 +35,30 @@ export function TeamView() {
         <span className="text-zinc-400" title="Expected category record in an average weekly matchup">
           {record.toFixed(1)}-{(9 - record).toFixed(1)} per week
         </span>
+      </div>
+
+      <div className="border-l-2 border-amber-300 pl-2">
+        {advice[0] ? (
+          <div className="flex items-baseline gap-3">
+            <span className="text-zinc-300">
+              Punt <span className="font-semibold text-amber-300">{CAT_LABEL[advice[0].cat]}</span>? You win it{' '}
+              {Math.round(advice[0].winRate * 100)}% of weeks and the best players left hurt it.
+              {advice[1] && (
+                <span className="text-zinc-500">
+                  {' '}
+                  Also: {CAT_LABEL[advice[1].cat]} ({Math.round(advice[1].winRate * 100)}%)
+                </span>
+              )}
+            </span>
+            <button className="ml-auto shrink-0 font-semibold text-amber-300 hover:text-amber-200" onClick={() => togglePunt(advice[0].cat)}>
+              Punt {CAT_LABEL[advice[0].cat]}
+            </button>
+          </div>
+        ) : (
+          <span className="text-zinc-500">
+            {roster.length < 2 ? 'Punt advice starts after your first two picks.' : punts.length >= 2 ? 'Two punts is the most worth running.' : 'No clear punt yet. Stay balanced.'}
+          </span>
+        )}
       </div>
 
       <table className="w-full">
