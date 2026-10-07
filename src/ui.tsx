@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { CAT_LABEL, CATS, type Cat, type CatLine } from './lib/cats'
 
 export function Avail({ p }: { p: number | null }) {
@@ -38,5 +39,17 @@ export function Fingerprint({ z, punts, detailed = false }: { z: CatLine; punts:
         </span>
       ))}
     </span>
+  )
+}
+
+/** A full-width amber notice above the clock with one action. */
+export function Banner({ children, action, onAction }: { children: ReactNode; action: string; onAction: () => void }) {
+  return (
+    <div className="flex shrink-0 items-center gap-3 border-b border-amber-300 px-3 py-1.5 text-amber-300">
+      <span>{children}</span>
+      <button className="ml-auto shrink-0 bg-amber-300 px-2 font-semibold text-black" onClick={onAction}>
+        {action}
+      </button>
+    </div>
   )
 }

@@ -11,6 +11,7 @@ export const ownersOf = (s: { pickOwners: number[] | null; teamCount: number; ro
   s.pickOwners ?? snakeOwners(s.teamCount, s.rosterSize)
 
 const defaultNames = (n: number) => Array.from({ length: n }, (_, i) => `Team ${i + 1}`)
+const defaultAbbrevs = (n: number) => Array.from({ length: n }, (_, i) => `T${i + 1}`)
 
 type State = {
   teamCount: number
@@ -66,7 +67,7 @@ export const useDraft = create<State & Actions>()(
       rosterSize: 13,
       mySlot: 0,
       teamNames: defaultNames(10),
-      teamAbbrevs: defaultNames(10).map((_, i) => `T${i + 1}`),
+      teamAbbrevs: defaultAbbrevs(10),
       draftDate: null,
       starters: ['PG', 'SG', 'SF', 'PF', 'C', 'G', 'F'],
       punts: [],

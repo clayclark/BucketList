@@ -5,7 +5,7 @@ import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
 import { fetchFantraxAdp } from './lib/fantrax'
 import { openSlots } from './lib/slots'
-import type { Section, TierEntry } from './lib/tiers'
+import { tagApplies, type Section, type TierEntry } from './lib/tiers'
 import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, type Valued } from './lib/value'
 import { ownersOf, useDraft } from './store'
 
@@ -101,6 +101,18 @@ function useBuildModel() {
     return out
   }, [sections])
 
+  // Sheet entries tagged for a punt you aren't running (or "No Punt" when you are) don't count.
+  const entryApplies = useCallback(
+    (e: TierEntry) =>
+      e.playerId === null ||
+      tagApplies(
+        e.tag,
+        punts,
+        (tiersByPlayer.get(e.playerId) ?? []).filter((r) => r.entry.id !== e.id).map((r) => r.entry.tag),
+      ),
+    [punts, tiersByPlayer],
+  )
+
   // Best three available fits among tiered players, highlighted on the board.
   const topFit = useMemo(() => {
     const tiered = teams.available.filter((v) => tiersByPlayer.has(v.player.id) && teams.fit.has(v.player.id))
@@ -121,7 +133,7 @@ function useBuildModel() {
     [allPlayers, draft],
   )
 
-  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, availAtTarget, cats: activeCats(punts) }
+  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

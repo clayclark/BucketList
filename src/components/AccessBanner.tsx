@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Banner } from '../ui'
 
 const hasExtensionApi = typeof chrome !== 'undefined' && !!chrome.permissions
 const ORIGINS = hasExtensionApi ? (chrome.runtime.getManifest().host_permissions ?? []) : []
@@ -24,11 +25,8 @@ export function AccessBanner() {
 
   if (granted) return null
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-amber-300 px-3 py-1.5 text-amber-300">
-      <span>Needs access to ESPN to follow your draft. Reload the draft room after.</span>
-      <button className="ml-auto shrink-0 font-semibold text-black bg-amber-300 px-2" onClick={() => chrome.permissions.request({ origins: ORIGINS })}>
-        Allow
-      </button>
-    </div>
+    <Banner action="Allow" onAction={() => chrome.permissions.request({ origins: ORIGINS })}>
+      Needs access to ESPN to follow your draft. Reload the draft room after.
+    </Banner>
   )
 }

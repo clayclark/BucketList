@@ -1,6 +1,6 @@
 import { useState, type DragEvent, type ReactNode } from 'react'
 import { input, textBtn } from '../format'
-import { minPick, tagApplies, tagCats, type Section, type TierEntry } from '../lib/tiers'
+import { minPick, tagCats, type Section, type TierEntry } from '../lib/tiers'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 import { PlayerRow, type DragProps } from './PlayerRow'
@@ -15,21 +15,13 @@ const readDrag = (e: DragEvent): Drag | null => {
 }
 
 export function Buckets() {
-  const { sections, showTaken, set, addSection, mySlot, punts } = useDraft()
-  const { draft, players, availAtTarget, allPlayers, tiersByPlayer } = useModel()
+  const { sections, showTaken, set, addSection, mySlot } = useDraft()
+  const { draft, players, availAtTarget, allPlayers, entryApplies: applies } = useModel()
   const [editing, setEditing] = useState(false)
   const [over, setOver] = useState<string | null>(null)
   const [order, setOrder] = useState<Order>('sheet')
 
-  // Entries tagged for a punt you aren't running (or "No Punt" when you are) stay visible but dimmed,
-  // and don't count toward what's left in their bucket.
-  const applies = (e: TierEntry) =>
-    e.playerId === null ||
-    tagApplies(
-      e.tag,
-      punts,
-      (tiersByPlayer.get(e.playerId) ?? []).filter((r) => r.entry.id !== e.id).map((r) => r.entry.tag),
-    )
+  // Entries that don't fit your punts stay visible but dimmed, and don't count toward what's left.
   const available = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
   const isOpen = (e: TierEntry) => available(e) && applies(e)
   const live = sections.filter((s) => s.entries.some(isOpen))

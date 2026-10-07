@@ -1,19 +1,19 @@
 import { fmtCat, ordinal, rankStyle, textBtn } from '../format'
-import { CAT_LABEL, CATS, type Cat } from '../lib/cats'
+import { CAT_LABEL, CATS } from '../lib/cats'
 import { assignSlots } from '../lib/slots'
 import { expectedWins, teamTotals, type Valued } from '../lib/value'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 
 export function TeamView() {
-  const { teams, draft, slots } = useModel()
+  const { teams, draft, slots, ranks } = useModel()
   const { mySlot, teamNames, punts, togglePunt, set, totals, starters } = useDraft()
   const roster = teams.rosters[mySlot] ?? []
   const mine = teams.strengths[mySlot]
-  if (!mine) return null
+  const myRanks = ranks.now
+  if (!mine || !myRanks) return null
 
-  const n = teams.strengths.length
-  const rankOf = (c: Cat) => 1 + teams.strengths.filter((s) => s[c] > mine[c]).length
+  const n = ranks.teams
   const others = teams.strengths.filter((_, i) => i !== mySlot)
   const record = others.length ? others.reduce((w, o) => w + expectedWins(mine, o, CATS), 0) / others.length : 0
   const raw = teamTotals(roster.map((v) => v.line))
@@ -41,7 +41,7 @@ export function TeamView() {
         <tbody>
           {CATS.map((c) => {
             const punted = punts.includes(c)
-            const r = rankOf(c)
+            const r = myRanks[c]
             return (
               <tr key={c} className={punted ? 'text-zinc-600' : ''}>
                 <td className={punted ? 'line-through' : 'text-zinc-200'}>{CAT_LABEL[c]}</td>
@@ -74,7 +74,8 @@ export function TeamView() {
           </span>
         </div>
         {starters.map((slot, i) => {
-          const v = holder[i] === undefined ? undefined : roster[holder[i]!]
+          const at = holder[i]
+          const v = at === undefined ? undefined : roster[at]
           return <LineupRow key={i} slot={slot} v={v} pick={v && draft.drafted.get(v.player.id)} onSelect={(id) => set({ selectedId: id })} />
         })}
         {flex.map((v) => (

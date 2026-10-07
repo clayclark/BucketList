@@ -1,27 +1,19 @@
-import { useEffect, useState } from 'react'
 import { fmtDraftDate, ordinal, textBtn, untilText } from '../format'
 import type { LiveDraft } from '../lib/live'
 import { useModel } from '../model'
 import { useDraft } from '../store'
+import { useNow } from '../useNow'
 
 const inExtensionPanel = () => typeof chrome !== 'undefined' && !!chrome.tabs && !location.search.includes('tab')
 
 function Countdown({ endsAt }: { endsAt: number }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(tick)
-  }, [])
+  const now = useNow(1000)
   const s = Math.max(0, Math.round((endsAt - now) / 1000))
   return <span className="tabular-nums">{s}s</span>
 }
 
 function DraftCountdown({ at }: { at: number }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(tick)
-  }, [])
+  const now = useNow(30_000)
   return (
     <>
       Draft {fmtDraftDate(at)}
@@ -42,7 +34,7 @@ export function ClockBar({
   live: LiveDraft | null
   practice: boolean
 }) {
-  const { draft, allPlayers, tiersByPlayer } = useModel()
+  const { draft, allPlayers, tiersByPlayer, entryApplies } = useModel()
   const { teamNames, teamAbbrevs, mySlot, espn, undo, picks, draftDate } = useDraft()
   const n = teamNames.length
   const round = Math.ceil(draft.current / n)
@@ -57,7 +49,7 @@ export function ClockBar({
   const clock = live?.clock && !live.done ? live.clock : null
   // When the last pick came out of your buckets, say which one and what's left in it.
   const lastTier = last && tiersByPlayer.get(last.playerId)?.[0]
-  const lastTierLeft = lastTier?.section.entries.filter((e) => e.playerId !== null && !draft.drafted.has(e.playerId)).length
+  const lastTierLeft = lastTier?.section.entries.filter((e) => e.playerId !== null && !draft.drafted.has(e.playerId) && entryApplies(e)).length
 
   return (
     <header className={`shrink-0 border-b px-3 py-1.5 ${myTurn ? 'border-amber-300 bg-amber-300 text-black' : 'border-zinc-900'}`}>
@@ -112,7 +104,7 @@ export function ClockBar({
         {syncError ? (
           <span className="text-rose-400">ESPN: {syncError}</span>
         ) : missing > 0 ? (
-          <span className={myTurn ? '' : 'text-rose-400'}>{missing} earlier picks unknown. Keep the draft room open from the start.</span>
+          <span className={myTurn ? '' : 'text-rose-400'}>{missing} earlier picks unknown. Reload the draft room to fill them in.</span>
         ) : started ? (
           <span className="truncate">
             Last #{last.overall} {teamAbbrevs[last.slot]}: <span className={myTurn ? '' : 'text-zinc-300'}>{allPlayers.get(last.playerId)?.name}</span>

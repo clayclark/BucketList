@@ -7,7 +7,8 @@ import { useDraft } from '../store'
 export function TeamStrip() {
   const { ranks, draft, cats } = useModel()
   const { previewId, selectedId, set } = useDraft()
-  if (!ranks.now) return null
+  const current = ranks.now
+  if (!current) return null
   const focus = previewId ?? selectedId
   const after = focus !== null && !draft.drafted.has(focus) ? ranks.withPlayer(focus) : null
   const n = ranks.teams
@@ -15,7 +16,7 @@ export function TeamStrip() {
   return (
     <button className="grid w-full shrink-0 grid-cols-9 gap-px border-b border-zinc-900 px-3 py-1 lg:max-w-[760px] lg:border-b-0" title="Your category ranks. Open Team." onClick={() => set({ tab: 'Team' })}>
       {CATS.map((c) => {
-        const now = ranks.now![c]
+        const now = current[c]
         const next = after?.[c] ?? now
         const delta = now - next
         const punted = !cats.includes(c)

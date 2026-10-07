@@ -17,6 +17,7 @@ import { livePicks, mergeLivePicks, type LiveDraft } from './lib/live'
 import { importSheet } from './lib/importSheet'
 import { useModel } from './model'
 import { useDraft, type Tab } from './store'
+import { useNow } from './useNow'
 
 const TABS: Record<Tab, ComponentType> = { Buckets, Players, Team: TeamView, League: LeagueView, Setup }
 const LIST_TABS: Tab[] = ['Buckets', 'Players']
@@ -28,20 +29,17 @@ const LIVE_FRESH_MS = 90_000
  * open and the draft isn't over; a finished practice draft's league is deleted, so fall back to yours.
  */
 function useLiveDraft() {
-  const [live, setLive] = useState<LiveDraft | null>(null)
-  const [now, setNow] = useState(() => Date.now())
+  const [stored, setStored] = useState<LiveDraft | null>(null)
+  const now = useNow(10_000)
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) return
-    const load = () => chrome.storage.local.get('liveDraft').then((s) => setLive((s.liveDraft as LiveDraft | undefined) ?? null))
+    const load = () => chrome.storage.local.get('liveDraft').then((s) => setStored((s.liveDraft as LiveDraft | undefined) ?? null))
     load()
     chrome.storage.onChanged.addListener(load)
-    const tick = setInterval(() => setNow(Date.now()), 10_000)
-    return () => {
-      chrome.storage.onChanged.removeListener(load)
-      clearInterval(tick)
-    }
+    return () => chrome.storage.onChanged.removeListener(load)
   }, [])
-  return live && !live.done && now - live.seen < LIVE_FRESH_MS ? live : null
+  const live = stored && !stored.done && now - stored.seen < LIVE_FRESH_MS ? stored : null
+  return { live, feedLeague: stored?.leagueId ?? null }
 }
 
 function useLeagueSync(live: LiveDraft | null) {
@@ -106,7 +104,7 @@ function useShortcuts() {
 export default function App() {
   const tab = useDraft((s) => s.tab)
   const setTab = (t: Tab) => useDraft.getState().set({ tab: t })
-  const live = useLiveDraft()
+  const { live, feedLeague } = useLiveDraft()
   const { league, practice } = useLeagueSync(live)
   const selectedId = useDraft((s) => s.selectedId)
   useFirstImport()
@@ -116,7 +114,7 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       <AccessBanner />
-      <DraftRoomCheck live={live} />
+      <DraftRoomCheck feedLeague={feedLeague} />
       <ClockBar syncError={league.error?.message ?? null} synced={league.isSuccess} live={live} practice={practice} />
       <TeamStrip />
       <nav className="flex h-8 shrink-0 items-center gap-3 border-b border-zinc-900 px-3">

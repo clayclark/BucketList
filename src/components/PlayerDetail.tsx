@@ -21,8 +21,10 @@ export function PlayerDetail({ variant }: { variant: 'inline' | 'sheet' | 'aside
   const taken = draft.drafted.get(id)
   const fit = teams.fit.get(id)
   const tiers = tiersByPlayer.get(id) ?? []
+  const before = ranks.now
   const after = !taken ? ranks.withPlayer(id) : null
-  const changes = after && ranks.now ? CATS.filter((c) => after[c] !== ranks.now![c]).sort((a, b) => ranks.now![b] - after[b] - (ranks.now![a] - after[a])) : []
+  // Categories whose rank he'd change, biggest improvement first.
+  const changes = after && before ? CATS.filter((c) => after[c] !== before[c]).sort((a, b) => before[b] - after[b] - (before[a] - after[a])) : []
 
   const stat = (label: string, value: ReactNode) => (
     <span className="whitespace-nowrap">
@@ -87,7 +89,7 @@ export function PlayerDetail({ variant }: { variant: 'inline' | 'sheet' | 'aside
         </table>
       )}
 
-      {after && ranks.now && (
+      {after && before && (
         <div className="text-zinc-500">
           {changes.length === 0 ? (
             'No change to your category ranks'
@@ -97,8 +99,8 @@ export function PlayerDetail({ variant }: { variant: 'inline' | 'sheet' | 'aside
               {changes.map((c, i) => (
                 <span key={c}>
                   {i > 0 && ' · '}
-                  <span className={after[c] < ranks.now![c] ? 'text-emerald-400' : 'text-rose-400'}>
-                    {CAT_LABEL[c]} {ordinal(ranks.now![c])}→{ordinal(after[c])}
+                  <span className={after[c] < before[c] ? 'text-emerald-400' : 'text-rose-400'}>
+                    {CAT_LABEL[c]} {ordinal(before[c])}→{ordinal(after[c])}
                   </span>
                 </span>
               ))}
