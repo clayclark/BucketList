@@ -18,7 +18,7 @@ export type Player = {
   team: string
   pos: string
   injury: string | null
-  /** Fantrax ADP, merged in by the model. */
+  /** ESPN, Yahoo and Fantrax ADP averaged, merged in by the model. */
   adp: number | null
   rank: number
   proj: Basis | null
@@ -44,6 +44,7 @@ type EspnPlayer = {
   eligibleSlots: number[]
   injuryStatus?: string
   draftRanksByRankType?: { STANDARD?: { rank: number } }
+  ownership?: { averageDraftPosition?: number }
   stats?: EspnStatEntry[]
 }
 
@@ -69,7 +70,7 @@ const toBasis = (entry: EspnStatEntry | undefined): Basis | null => {
   }
 }
 
-export async function fetchPlayers(): Promise<Omit<Player, 'adp'>[]> {
+export async function fetchPlayers(): Promise<(Omit<Player, 'adp'> & { espnAdp: number | null })[]> {
   const filter = {
     players: {
       limit: 1200,
@@ -91,6 +92,7 @@ export async function fetchPlayers(): Promise<Omit<Player, 'adp'>[]> {
     pos: POSITIONS.filter((_, i) => p.eligibleSlots.includes(i)).join('/'),
     injury: p.injuryStatus && p.injuryStatus !== 'ACTIVE' ? p.injuryStatus : null,
     rank: p.draftRanksByRankType?.STANDARD?.rank ?? 999,
+    espnAdp: p.ownership?.averageDraftPosition || null,
     proj: toBasis(p.stats?.find((s) => s.id === `10${SEASON}`)),
     last: toBasis(p.stats?.find((s) => s.id === `00${SEASON - 1}`)),
   }))

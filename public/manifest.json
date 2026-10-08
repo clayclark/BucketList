@@ -26,6 +26,7 @@
     "https://lm-api-reads.fantasy.espn.com/*",
     "https://*.espn.com/*",
     "https://www.fantrax.com/*",
+    "https://pub-api-ro.fantasysports.yahoo.com/*",
     "https://docs.google.com/*",
     "https://*.googleusercontent.com/*"
   ],

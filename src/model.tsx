@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { CATS, type Cat, type CatLine } from './lib/cats'
+import { blendAdp, fetchMarketAdp } from './lib/adp'
 import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
-import { fetchFantraxAdp } from './lib/fantrax'
 import { openSlots } from './lib/slots'
 import { tagApplies, type Section, type TierEntry } from './lib/tiers'
 import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, type Valued } from './lib/value'
@@ -15,15 +15,16 @@ const FIT_CANDIDATES = 250
 
 function useBuildModel() {
   const espn = useQuery({ queryKey: ['players'], queryFn: fetchPlayers, staleTime: 60 * 60 * 1000 })
-  const adp = useQuery({
-    queryKey: ['fantrax-adp'],
-    queryFn: () => fetchFantraxAdp(espn.data ?? []),
+  const market = useQuery({
+    queryKey: ['market-adp'],
+    queryFn: () => fetchMarketAdp(espn.data ?? []),
     enabled: !!espn.data,
     staleTime: 60 * 60 * 1000,
   })
   const data = useMemo(
-    (): Player[] | undefined => espn.data?.map((p) => ({ ...p, adp: adp.data?.get(p.id) ?? null })),
-    [espn.data, adp.data],
+    (): Player[] | undefined =>
+      espn.data?.map(({ espnAdp, ...p }) => ({ ...p, adp: blendAdp([espnAdp, ...(market.data ?? []).map((m) => m.get(p.id))]) })),
+    [espn.data, market.data],
   )
   const players = { ...espn, data }
   const { teamCount, rosterSize, mySlot, punts, basis, totals, picks, sections, pickOwners, starters } = useDraft()
@@ -152,7 +153,7 @@ function useBuildModel() {
     return { isOpen, live, current: live[0]?.id, expected, soon, lastChance, waitBuckets, canWait }
   }, [sections, draft, entryApplies, availAtTarget, mySlot])
 
-  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, outlook, availAtTarget, cats: activeCats(punts) }
+  return { players, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, outlook, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   // The extension calls ESPN with your Chrome login. In `pnpm dev` the page is on localhost, so a proxy
   // forwards ESPN_S2 / ESPN_SWID from .env.local to reach a private league.
   const env = loadEnv(mode, process.cwd(), 'ESPN_')
-  const espnProxy: Record<string, ProxyOptions> = {
+  const proxy: Record<string, ProxyOptions> = {
     '/espn': {
       target: 'https://lm-api-reads.fantasy.espn.com',
       changeOrigin: true,
@@ -17,9 +17,15 @@ export default defineConfig(({ mode }) => {
         })
       },
     },
+    // Yahoo's public API sends no CORS headers; the extension's host permission covers it outside dev.
+    '/yahoo': {
+      target: 'https://pub-api-ro.fantasysports.yahoo.com',
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/yahoo/, ''),
+    },
   }
   return {
     plugins: [react(), tailwindcss()],
-    server: { proxy: espnProxy },
+    server: { proxy: proxy },
   }
 })
