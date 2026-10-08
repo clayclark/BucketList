@@ -112,7 +112,7 @@ function Board() {
                 <button
                   key={overall}
                   onClick={() => pick && set({ selectedId: pick.playerId })}
-                  className={`flex h-6 w-full items-center gap-2 text-left ${overall === draft.current ? 'bg-amber-300/15' : ''}`}
+                  className={`flex h-6 w-full items-center gap-2 text-left ${overall === draft.currentPick ? 'bg-amber-300/15' : ''}`}
                 >
                   <span className="w-7 text-zinc-600">{overall}</span>
                   <span className={`w-12 truncate ${mine ? 'text-emerald-400' : 'text-zinc-500'}`}>{teamAbbrevs[owner]}</span>
@@ -138,7 +138,7 @@ function Board() {
                     key={c}
                     onClick={() => pick && set({ selectedId: pick.playerId })}
                     className={`h-9 truncate border px-1 align-top leading-tight ${
-                      overall === draft.current ? 'border-amber-300' : 'border-zinc-900'
+                      overall === draft.currentPick ? 'border-amber-300' : 'border-zinc-900'
                     } ${mine ? 'bg-zinc-950' : ''}`}
                   >
                     <div className={`truncate text-[10px] ${mine ? 'text-emerald-600' : 'text-zinc-600'}`}>

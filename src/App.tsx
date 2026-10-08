@@ -17,6 +17,7 @@ import { livePicks, mergeLivePicks, type LiveDraft } from './lib/live'
 import { importSheet } from './lib/importSheet'
 import { useModel } from './model'
 import { useDraft, type Tab } from './store'
+import { useBadgeSync } from './useBadgeSync'
 import { useNow } from './useNow'
 
 const TABS: Record<Tab, ComponentType> = { Buckets, Players, Team: TeamView, League: LeagueView, Setup }
@@ -109,6 +110,7 @@ export default function App() {
   const selectedId = useDraft((s) => s.selectedId)
   useFirstImport()
   useShortcuts()
+  useBadgeSync()
   const View = TABS[tab]
 
   return (

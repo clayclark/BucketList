@@ -41,12 +41,12 @@ function useBuildModel() {
     const byPick = new Map(picks.map((p) => [p.overall, p]))
     const owners = ownersOf({ pickOwners, teamCount, rosterSize })
     const open = openPicks(owners, new Set(byPick.keys()))
-    const current = open[0] ?? owners.length + 1
-    const onClock = open.length ? owners[current - 1] : null
+    const currentPick = open[0] ?? owners.length + 1
+    const onClock = open.length ? owners[currentPick - 1] : null
     const mine = open.filter((o) => owners[o - 1] === mySlot)
     // When I'm on the clock, the useful question is whether a player lasts to my *following* pick.
     const target = onClock === mySlot ? mine[1] : mine[0]
-    return { drafted, byPick, owners, current, onClock, mine, target: target ?? null }
+    return { drafted, byPick, owners, currentPick, onClock, mine, target: target ?? null }
   }, [picks, pickOwners, teamCount, rosterSize, mySlot])
 
   const teams = useMemo(() => {
@@ -128,12 +128,31 @@ function useBuildModel() {
     (id: number) => {
       const p = allPlayers.get(id)
       if (!p || draft.drafted.has(id) || draft.target === null) return null
-      return p.adp === null ? 1 : availability(p.adp, draft.current, draft.target)
+      return p.adp === null ? 1 : availability(p.adp, draft.currentPick, draft.target)
     },
     [allPlayers, draft],
   )
 
-  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, availAtTarget, cats: activeCats(punts) }
+  // The take-now-or-wait read on your buckets, shared by the Buckets view and the draft room badges.
+  const outlook = useMemo(() => {
+    const isOpen = (e: TierEntry) => (e.playerId === null || !draft.drafted.has(e.playerId)) && entryApplies(e)
+    const live = sections.filter((s) => s.entries.some(isOpen))
+    // How many of each bucket should still be on the board at your next pick.
+    const expected = new Map(
+      sections.map((s) => {
+        const ids = new Set(s.entries.flatMap((e) => (e.playerId !== null && isOpen(e) ? [e.playerId] : [])))
+        return [s.id, draft.target ? [...ids].reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null] as const
+      }),
+    )
+    // Near your pick: the highest bucket that won't last, and the top buckets you're choosing from.
+    const soon = draft.onClock === mySlot || (draft.mine[0] ?? Infinity) - draft.currentPick <= 2
+    const lastChance = soon ? live.find((s) => (expected.get(s.id) ?? Infinity) < 1)?.id : undefined
+    const waitBuckets = new Set(soon ? live.slice(0, 2).map((s) => s.id) : [])
+    const canWait = (sectionId: string, playerId: number) => waitBuckets.has(sectionId) && (availAtTarget(playerId) ?? 0) >= 0.7
+    return { isOpen, live, current: live[0]?.id, expected, soon, lastChance, waitBuckets, canWait }
+  }, [sections, draft, entryApplies, availAtTarget, mySlot])
+
+  return { players, adpError: adp.error, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, outlook, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

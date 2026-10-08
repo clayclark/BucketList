@@ -48,6 +48,15 @@
         "draft-relay.js"
       ],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://fantasy.espn.com/basketball/draft*"
+      ],
+      "js": [
+        "draft-badges.js"
+      ],
+      "run_at": "document_idle"
     }
   ]
 }

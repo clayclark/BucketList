@@ -24,6 +24,7 @@ Be logged in to espn.com in the same browser. The extension reads your private l
 - **Players**: everyone, on the same rows, sortable by value, fit, ADP or availability.
 - **Every player row**: a 9-cell category heat strip, fit, and the chance he's back at your next pick. Click (or use the arrow keys) to expand details in place, including exactly which of your ranks he changes.
 - **Team**: a punt advisor (the category you already lose most weeks that the best players left also hurt, with a one-click punt), category ranks with punt toggles, and your roster placed into your league's lineup slots.
+- **In ESPN's draft room**: your bucket players get an edge bar (red take now, green can wait, blue in your buckets, grey not for your punts) and `B7 50% +0.43` (bucket, chance he's back at your pick, fit) next to their position. Hover a row for his 9-category heat strip. Badges only show while the panel is open, so they're never stale.
 - **League**: category standings with your expected record against each team, the draft board, rosters.
 
 Values are z-scores against the top `teams × roster` players from ESPN's projections. ADP comes from Fantrax. Fit is how many more categories per week a player is expected to win you, given your roster. Picks arrive live from the open draft room and land on ESPN's real pick order (traded picks, third-round reversal), with keepers placed at their reserved picks. Turn sync off in Setup to enter picks by hand (search + Enter, Cmd+Z to undo).

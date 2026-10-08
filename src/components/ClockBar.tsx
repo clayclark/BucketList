@@ -37,10 +37,10 @@ export function ClockBar({
   const { draft, allPlayers, tiersByPlayer, entryApplies } = useModel()
   const { teamNames, teamAbbrevs, mySlot, espn, undo, picks, draftDate } = useDraft()
   const n = teamNames.length
-  const round = Math.ceil(draft.current / n)
+  const round = Math.ceil(draft.currentPick / n)
   const myTurn = draft.onClock === mySlot
   const next = draft.mine[0]
-  const away = next === undefined ? null : next - draft.current
+  const away = next === undefined ? null : next - draft.currentPick
   const last = picks.filter((p) => !p.keeper).sort((a, b) => b.overall - a.overall)[0]
   const started = !!last
   // Picks made before any draft room tab was open never reached us. Rare, but say so rather than guess.
@@ -58,7 +58,7 @@ export function ClockBar({
           <span className="text-sm font-semibold">Draft complete</span>
         ) : myTurn ? (
           <span className="text-sm font-bold">
-            You're on the clock · #{draft.current}
+            You're on the clock · #{draft.currentPick}
             {clock && (
               <>
                 {' · '}
@@ -68,7 +68,7 @@ export function ClockBar({
           </span>
         ) : (
           <>
-            <span className="text-sm font-semibold text-zinc-100">#{draft.current}</span>
+            <span className="text-sm font-semibold text-zinc-100">#{draft.currentPick}</span>
             {clock && (
               <span className="text-zinc-400">
                 <Countdown endsAt={clock.endsAt} />

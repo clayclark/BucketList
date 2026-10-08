@@ -15,31 +15,18 @@ const readDrag = (e: DragEvent): Drag | null => {
 }
 
 export function Buckets() {
-  const { sections, showTaken, set, addSection, mySlot } = useDraft()
-  const { draft, players, availAtTarget, allPlayers, entryApplies: applies } = useModel()
+  const { sections, showTaken, set, addSection } = useDraft()
+  const { draft, players, availAtTarget, allPlayers, entryApplies: applies, outlook } = useModel()
   const [editing, setEditing] = useState(false)
   const [over, setOver] = useState<string | null>(null)
   const [order, setOrder] = useState<Order>('sheet')
 
   // Entries that don't fit your punts stay visible but dimmed, and don't count toward what's left.
+  const { isOpen, live, current, expected, soon, lastChance, canWait } = outlook
   const available = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
-  const isOpen = (e: TierEntry) => available(e) && applies(e)
-  const live = sections.filter((s) => s.entries.some(isOpen))
   // Show any bucket with someone available, even if they're all dimmed (e.g. Giannis listed only as "punt FT").
   const shownSections = showTaken || editing ? sections : sections.filter((s) => s.entries.some(available))
-  const current = live[0]?.id
-  // How many of each bucket should still be on the board at your next pick.
-  const expected = new Map(
-    sections.map((s) => {
-      const ids = new Set(s.entries.flatMap((e) => (e.playerId !== null && isOpen(e) ? [e.playerId] : [])))
-      return [s.id, draft.target ? [...ids].reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null] as const
-    }),
-  )
-  // Near your pick: the highest bucket that won't last, who in your top buckets can wait, and who's
-  // likely still there next time. Together that's the take-now-or-wait decision.
-  const soon = draft.onClock === mySlot || (draft.mine[0] ?? Infinity) - draft.current <= 2
-  const lastChance = soon ? live.find((s) => (expected.get(s.id) ?? Infinity) < 1)?.id : undefined
-  const waitHints = new Set(soon ? live.slice(0, 2).map((s) => s.id) : [])
+  // Who's likely still there next time: with take-now and can-wait, that's the whole decision.
   const likelyLater = soon && draft.target ? likelyAtNextPick(live, isOpen, availAtTarget) : []
 
   // Column headers sort within each bucket; clicking the active one goes back to your sheet order.
@@ -98,7 +85,7 @@ export function Buckets() {
             current={s.id === current}
             expected={expected.get(s.id) ?? null}
             lastChance={s.id === lastChance}
-            waitHints={waitHints.has(s.id)}
+            canWait={canWait}
             editing={editing}
             order={order}
             isOpen={isOpen}
@@ -131,7 +118,7 @@ function Bucket({
   current,
   expected,
   lastChance,
-  waitHints,
+  canWait,
   editing,
   order,
   isOpen,
@@ -143,7 +130,7 @@ function Bucket({
   current: boolean
   expected: number | null
   lastChance: boolean
-  waitHints: boolean
+  canWait: (sectionId: string, playerId: number) => boolean
   editing: boolean
   order: Order
   isOpen: (e: TierEntry) => boolean
@@ -252,11 +239,10 @@ function Bucket({
           <PlayerRow
             key={entry.id}
             id={entry.playerId}
-            tag={entry.tag && <Tag tag={entry.tag} applies={applies(entry)} current={draft.current} />}
+            tag={entry.tag && <Tag tag={entry.tag} applies={applies(entry)} current={draft.currentPick} />}
             dimmed={!applies(entry)}
             hint={
-              waitHints &&
-              (availAtTarget(entry.playerId) ?? 0) >= 0.7 && (
+              canWait(section.id, entry.playerId) && (
                 <span className="shrink-0 text-[11px] text-emerald-500" title="Likely still there at your next pick">
                   can wait
                 </span>

@@ -152,3 +152,7 @@ export function sectionsToRows(sections: Section[], perRow = 8): string[][] {
   }
   return rows
 }
+
+/** Short bucket names for tight spots: "Bucket 7" → "B7", "Health Bucket" → "Health", "Flier Tier 2" → "Flier 2". */
+export const shortBucket = (name: string) =>
+  name.replace(/^Bucket\s+/i, 'B').replace(/\s+Bucket$/i, '').replace(/^Upside\s+/i, '').replace(/\s+Tier\s+/i, ' ')
