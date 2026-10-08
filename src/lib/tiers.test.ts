@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { minPick, nameMatcher, parseTierSheet, sectionsToRows, sheetCsvUrl, shortBucket, tagApplies } from './tiers'
+import { bucketCode, minPick, nameMatcher, parseTierSheet, sectionsToRows, sheetCsvUrl, shortBucket, tagApplies } from './tiers'
 
 const players = [
   { id: 1, name: 'Stephen Curry' },
@@ -86,4 +86,8 @@ it('writes buckets back in the sheet layout so they re-import unchanged', () => 
 
 it('shortens bucket names for the draft room badges', () => {
   expect(['Bucket 7', 'Health Bucket', 'Upside Fliers', 'Flier Tier 2', 'Spillage'].map(shortBucket)).toEqual(['B7', 'Health', 'Fliers', 'Flier 2', 'Spillage'])
+})
+
+it('codes bucket names tightly enough to fit ESPN rows', () => {
+  expect(['Bucket 12', 'Health Bucket', 'Upside Fliers', 'Flier Tier 2', 'Spillage'].map(bucketCode)).toEqual(['B12', 'H', 'UF', 'F2', 'S'])
 })

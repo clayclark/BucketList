@@ -1,6 +1,6 @@
 // Decorates ESPN's draft room player list with Bucket List badges: an edge bar (take now, can wait,
-// in your buckets, or not for your punts), "B7 · 50% · +0.43" after the position pills, and a hover
-// card with the 9-category heat strip. Data comes from the side panel (useBadgeSync.ts) via storage;
+// in your buckets, or not for your punts), the bucket code under ESPN's rank, "4.1 +.43 50%" (value,
+// fit, chance he's back) after the position pills, and a hover card with the 9-category heat strip. Data comes from the side panel (useBadgeSync.ts) via storage;
 // rows are matched by the ESPN player id in each headshot URL. Read-only: nothing on ESPN's page is clicked.
 ;(() => {
   if (!/\/basketball\/draft/.test(location.pathname)) return
@@ -20,6 +20,9 @@
     .bl-inline { flex: 1 1 auto; margin-left: 6px; font-size: 11px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .bl-inline b { color: #1d1d1f; font-weight: 700; }
     .bl-inline .bl-top { color: #b45309; }
+    .bl-inline .bl-val { color: #1d1d1f; }
+    .bl-code { display: block; font-size: 10px; font-weight: 700; color: #1d1d1f; line-height: 1.1; }
+    .bl-code.bl-off { opacity: .45; }
     .bl-inline.bl-off { opacity: .45; }
     .bl-low { color: #be123c; } .bl-mid { color: #b45309; } .bl-high { color: #9ca3af; }
     .bl-card { position: fixed; z-index: 2147483647; background: #000; color: #d4d4d8; font: 12px ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -35,6 +38,8 @@
   const availClass = (p) => (p === null ? 'bl-high' : p < 0.3 ? 'bl-low' : p < 0.7 ? 'bl-mid' : 'bl-high')
   const pct = (p) => (p === null ? '' : `${Math.round(p * 100)}%`)
   const fitText = (f) => (f === null ? '' : `${f > 0 ? '+' : ''}${f.toFixed(2)}`)
+  // Row version drops the leading zero (+.43) so the badge fits ESPN's fixed-width player column.
+  const fitShort = (f) => fitText(f).replace(/^([+-]?)0\./, '$1.')
   const heatColor = (z) => {
     if (z === null) return 'rgba(113,113,122,.25)'
     const a = Math.min(Math.abs(z) / 2, 1) * 0.9
@@ -49,15 +54,26 @@
       const line = img.closest('.player-column')?.querySelector('.player-details > .flex.items-center')
       // ESPN's cells paint their own backgrounds, so the edge bar goes on the row's first cell.
       const edgeCell = row?.querySelector('.fixedDataTableCellLayout_main')
-      if (!id || !row || !line || !edgeCell) continue
+      // The bucket code sits under ESPN's rank, which leaves the second line room for the numbers.
+      const rankCell = edgeCell?.querySelector('.public_fixedDataTableCell_cellContent')
+      if (!id || !row || !line || !edgeCell || !rankCell) continue
       const badge = live() ? feed.players[id] : undefined
       let inline = line.querySelector('.bl-inline')
+      let code = rankCell.querySelector('.bl-code')
       if (!badge) {
         inline?.remove()
+        code?.remove()
         edgeCell.style.boxShadow = ''
         delete row.dataset.blId
         continue
       }
+      if (!code) {
+        code = document.createElement('span')
+        code.className = 'bl-code'
+        rankCell.appendChild(code)
+      }
+      if (code.textContent !== badge.code) code.textContent = badge.code
+      code.classList.toggle('bl-off', badge.state === 'off')
       row.dataset.blId = id
       edgeCell.style.boxShadow = `inset 4px 0 0 ${EDGE[badge.state]}`
       if (!inline) {
@@ -66,7 +82,14 @@
         line.appendChild(inline)
       }
       inline.classList.toggle('bl-off', badge.state === 'off')
-      const html = `<b>${badge.bucket}</b>${badge.avail !== null ? ` <span class="${availClass(badge.avail)}">${pct(badge.avail)}</span>` : ''}${badge.fit !== null ? ` <b class="${badge.top ? 'bl-top' : ''}">${fitText(badge.fit)}</b>` : ''}`
+      // Same order as the panel's columns: value, fit, then the chance he's back at your pick, shown
+      // only when it's in doubt (under 95%) so it doesn't crowd every row.
+      const parts = [
+        badge.value !== null && `<span class="bl-val">${badge.value.toFixed(1)}</span>`,
+        badge.fit !== null && `<b class="${badge.top ? 'bl-top' : ''}">${fitShort(badge.fit)}</b>`,
+        badge.avail !== null && badge.avail < 0.95 && `<span class="${availClass(badge.avail)}">${pct(badge.avail)}</span>`,
+      ]
+      const html = parts.filter(Boolean).join(' ')
       if (inline.innerHTML !== html) inline.innerHTML = html
     }
   }
@@ -97,7 +120,7 @@
     const call = { take: '<span class="bl-take">take now</span>', wait: '<span class="bl-wait">can wait</span>', off: '<span class="bl-dim">not for your punts</span>', tier: '' }[badge.state]
     card.innerHTML = `
       <div class="bl-row"><b style="color:#fff">${name}</b> <span>${badge.bucket}</span>${badge.tag ? ` <span class="bl-sky">${badge.tag}</span>` : ''} ${call}</div>
-      <div class="bl-row bl-dim">Fit <span class="${badge.top ? 'bl-amber' : ''}" style="color:${badge.top ? '' : '#d4d4d8'}">${fitText(badge.fit) || '-'}</span>
+      <div class="bl-row bl-dim">Value <span style="color:#d4d4d8">${badge.value === null ? '-' : badge.value.toFixed(1)}</span> · Fit <span class="${badge.top ? 'bl-amber' : ''}" style="color:${badge.top ? '' : '#d4d4d8'}">${fitText(badge.fit) || '-'}</span>
         ${badge.avail !== null && feed.target ? `· ${pct(badge.avail)} left at #${feed.target}` : ''}</div>
       ${badge.z.length ? `<div class="bl-heat">${CATS.map((c, i) => `<span>${c}<i style="background:${heatColor(badge.z[i])}">${badge.z[i] === null ? '–' : badge.z[i].toFixed(1)}</i></span>`).join('')}</div>` : ''}`
     const r = row.getBoundingClientRect()

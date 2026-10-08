@@ -156,3 +156,14 @@ export function sectionsToRows(sections: Section[], perRow = 8): string[][] {
 /** Short bucket names for tight spots: "Bucket 7" → "B7", "Health Bucket" → "Health", "Flier Tier 2" → "Flier 2". */
 export const shortBucket = (name: string) =>
   name.replace(/^Bucket\s+/i, 'B').replace(/\s+Bucket$/i, '').replace(/^Upside\s+/i, '').replace(/\s+Tier\s+/i, ' ')
+
+/** Tightest bucket code for ESPN's rows: "Bucket 7" → "B7", "Flier Tier 2" → "F2", "Upside Fliers" → "UF", "Health Bucket" → "H". */
+export const bucketCode = (name: string) => {
+  const numbered = name.match(/^Bucket\s+(\d+)$/i)
+  if (numbered) return `B${numbered[1]}`
+  return name
+    .split(/\s+/)
+    .filter((w) => !/^(bucket|tier)$/i.test(w))
+    .map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase()))
+    .join('')
+}

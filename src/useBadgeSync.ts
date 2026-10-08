@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { CATS } from './lib/cats'
-import { shortBucket } from './lib/tiers'
+import { bucketCode, shortBucket } from './lib/tiers'
 import { useModel } from './model'
 import { useDraft } from './store'
 
@@ -9,8 +9,11 @@ import { useDraft } from './store'
  * `state` drives the edge bar: take now, can wait, in your buckets, or listed only for a punt you aren't running.
  */
 export type Badge = {
+  /** Tight code for the row ("F2"); `bucket` is the readable name for the hover card. */
+  code: string
   bucket: string
   tag: string | null
+  value: number | null
   fit: number | null
   top: boolean
   avail: number | null
@@ -40,8 +43,10 @@ export function useBadgeSync() {
       const applies = entryApplies(ref.entry)
       const v = byId.get(id)
       players[id] = {
+        code: bucketCode(ref.section.name),
         bucket: shortBucket(ref.section.name),
         tag: ref.entry.tag,
+        value: v ? Math.round(v.value * 10) / 10 : null,
         fit: teams.fit.get(id) ?? null,
         top: topFit.has(id),
         avail: availAtTarget(id),
