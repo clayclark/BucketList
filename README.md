@@ -4,6 +4,11 @@
 
 A live draft companion for ESPN 9-cat H2H fantasy basketball. It sits in the browser's side panel next to ESPN's draft room, follows every pick as it happens, and answers the two questions that matter on the clock: **who fits my team**, and **who won't last until my next pick**.
 
+| On the clock | Player detail | Team |
+|---|---|---|
+| <img src="docs/buckets.png" width="280" alt="Buckets tab at pick 6"> | <img src="docs/player.png" width="280" alt="Cade Cunningham expanded, showing how he moves each category rank"> | <img src="docs/team.png" width="280" alt="Team tab with category ranks and lineup slots"> |
+| Bucket 5 won't last to #15, so it says take one now. | Drafting Cade moves you from 8th to 1st in assists. | Where you rank in each category, and which slots are open. |
+
 ## Install
 
 ```sh
