@@ -22,6 +22,22 @@ pnpm build
 
 If the panel shows an **Allow** banner, the browser is withholding site access (Helium can do this). Allow it and reload the ESPN tab. After code changes, run `pnpm build` and hit reload on the extensions page.
 
+## Use it for your league
+
+Open Setup (`⚙`) and set two things:
+
+- **League ID**: the `leagueId=` number in your ESPN league's URL. Your own team is found from your login.
+- **Google Sheet**: your tiers, shared as "anyone with the link can view". Then hit **Import**.
+
+The sheet is read as blocks: a header row of section names, then players listed down each column under them. A header cell starts with Bucket, Tier, Flier, Upside, Health or Spillage, and a sheet can have several header rows.
+
+| Bucket 1 | Bucket 2 | Bucket 3 | Health Bucket |
+|---|---|---|---|
+| Nikola Jokic | Shai Gilgeous-Alexander | Cade Cunningham (TO) | Kawhi Leonard (30+) |
+| Victor Wembanyama | Luka Doncic | Giannis Antetokounmpo (FT) | Anthony Davis (35+) |
+
+Tags in parentheses are optional. `(TO)`, `(FT)`, `(FG)` and `(No Punt)` tie a listing to your punts, and `(30+)` means "not before pick 30". Number-only cells and ALL-CAPS notes are skipped. No sheet? Build your buckets in the panel with **Edit**.
+
 ## Draft night
 
 1. Open the panel. It reads your league with your ESPN login and finds your team on its own.
@@ -66,3 +82,7 @@ While the panel is open, ESPN's own player list gets badges. Your bucket players
 `pnpm dev` runs the same UI at http://localhost:5173. To reach a private league there, put `ESPN_S2` and `ESPN_SWID` (your espn.com cookies) in `.env.local`; the dev server proxies them. They never reach the built extension.
 
 `pnpm test`, `pnpm lint` and `pnpm build` should all pass before a merge.
+
+## License
+
+MIT. Not affiliated with or endorsed by ESPN, Yahoo or Fantrax.
