@@ -2,7 +2,7 @@
 
 # Bucket List
 
-A live draft companion for ESPN 9-cat H2H fantasy basketball. It sits in the browser's side panel next to ESPN's draft room, follows every pick as it happens, and answers the two questions that matter on the clock: **who fits my team**, and **who won't last until my next pick**.
+A Chrome extension for ESPN 9-cat H2H fantasy basketball drafts (works in any Chromium browser: Chrome, Helium, Arc, Brave, Edge). It sits in the side panel next to ESPN's draft room, follows every pick as it happens, and answers the two questions that matter on the clock: **who fits my team**, and **who won't last until my next pick**.
 
 | On the clock | Player detail | Team |
 |---|---|---|
