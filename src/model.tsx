@@ -6,7 +6,7 @@ import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
 import { openSlots } from './lib/slots'
 import { tagApplies, type Section, type TierEntry } from './lib/tiers'
-import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, type Valued } from './lib/value'
+import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, winScales, type Valued } from './lib/value'
 import { ownersOf, useDraft } from './store'
 
 export type TierRef = { section: Section; entry: TierEntry }
@@ -30,7 +30,7 @@ function useBuildModel() {
   const { teamCount, rosterSize, mySlot, punts, basis, totals, picks, sections, pickOwners, starters } = useDraft()
 
   const poolSize = teamCount * rosterSize
-  const valued = useMemo(
+  const { valued, swing } = useMemo(
     () => valuePlayers(players.data ?? [], { basis, totals, punts, poolSize }),
     [players.data, basis, totals, punts, poolSize],
   )
@@ -52,6 +52,7 @@ function useBuildModel() {
 
   const teams = useMemo(() => {
     const replacement = replacementLevel(valued, poolSize)
+    const winScale = winScales(swing, rosterSize)
     const rosters: Valued[][] = Array.from({ length: teamCount }, () => [])
     for (const p of picks) {
       const v = byId.get(p.playerId)
@@ -66,9 +67,10 @@ function useBuildModel() {
       rosterSize,
       replacement,
       activeCats(punts),
+      winScale,
     )
-    return { rosters, strengths, available, fit, replacement }
-  }, [valued, byId, picks, teamCount, rosterSize, mySlot, poolSize, punts, draft])
+    return { rosters, strengths, available, fit, replacement, winScale }
+  }, [valued, swing, byId, picks, teamCount, rosterSize, mySlot, poolSize, punts, draft])
 
   // My category ranks now, and what they'd be with a given player added.
   const ranks = useMemo(() => {

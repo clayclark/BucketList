@@ -74,6 +74,7 @@ While the panel is open, ESPN's own player list gets badges. Your bucket players
 
 - **Projections**: ESPN.
 - **ADP**: an equal blend of ESPN, Yahoo and Fantrax, the same blend Hashtag Basketball publishes. A source that fails to load is left out.
+- **Category swings**: Josh Lloyd's [2025-26 consistency study](https://joshlloydfantasy.com/research/fantasy-basketball-consistency-study/). Fit counts a lead in a steady category (rebounds, points) as more likely to win the week than the same lead in a streaky one (steals, blocks).
 - **Picks**: the draft room's live feed, placed on ESPN's real pick order (traded picks, third-round reversal) with keepers at their reserved picks. Turn sync off in Setup to enter picks by hand (search + Enter, Cmd+Z to undo).
 - **Buckets**: your Google Sheet, set in Setup.
 

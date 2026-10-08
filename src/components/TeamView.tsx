@@ -16,7 +16,7 @@ export function TeamView() {
 
   const n = ranks.teams
   const others = teams.strengths.filter((_, i) => i !== mySlot)
-  const record = others.length ? others.reduce((w, o) => w + expectedWins(mine, o, CATS), 0) / others.length : 0
+  const record = others.length ? others.reduce((w, o) => w + expectedWins(mine, o, CATS, teams.winScale), 0) / others.length : 0
   const raw = teamTotals(roster.map((v) => v.line))
   const advice = puntAdvice({
     mine,
@@ -24,6 +24,7 @@ export function TeamView() {
     topAvailable: teams.available.slice(0, 20).map((v) => v.z),
     punts,
     rosterCount: roster.length,
+    scale: teams.winScale,
   })
   const holder = assignSlots(starters, roster.map((v) => v.player.pos.split('/')))
   const flex = roster.filter((_, i) => !holder.includes(i))

@@ -20,19 +20,21 @@ export function puntAdvice({
   topAvailable,
   punts,
   rosterCount,
+  scale,
 }: {
   mine: CatLine
   opponents: CatLine[]
   topAvailable: CatLine[]
   punts: readonly Cat[]
   rosterCount: number
+  scale: CatLine
 }): PuntOption[] {
   if (rosterCount < 2 || punts.length >= 2 || !opponents.length || !topAvailable.length) return []
   const losingBelow = punts.length === 0 ? 0.4 : 0.2
   return CATS.filter((c) => !punts.includes(c))
     .map((cat) => ({
       cat,
-      winRate: opponents.reduce((n, o) => n + winProb(mine[cat], o[cat]), 0) / opponents.length,
+      winRate: opponents.reduce((n, o) => n + winProb(mine[cat], o[cat], scale[cat]), 0) / opponents.length,
       boardTilt: topAvailable.reduce((n, z) => n + z[cat], 0) / topAvailable.length,
     }))
     .filter((o) => o.winRate < losingBelow && o.boardTilt < 0)

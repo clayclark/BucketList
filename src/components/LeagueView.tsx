@@ -33,7 +33,7 @@ function Standings() {
   const mine = strengths[mySlot]
   const rank = (i: number, c: Cat) => 1 + strengths.filter((s) => s[c] > strengths[i][c]).length
   const vsField = (i: number) =>
-    strengths.reduce((sum, o, j) => (j === i ? sum : sum + expectedWins(strengths[i], o, CATS)), 0) / (n - 1 || 1)
+    strengths.reduce((sum, o, j) => (j === i ? sum : sum + expectedWins(strengths[i], o, CATS, teams.winScale)), 0) / (n - 1 || 1)
 
   return (
     <div className="p-3">
@@ -57,7 +57,7 @@ function Standings() {
         <tbody>
           {strengths.map((s, i) => {
             const me = i === mySlot
-            const h2h = mine && !me ? expectedWins(mine, s, CATS) : null
+            const h2h = mine && !me ? expectedWins(mine, s, CATS, teams.winScale) : null
             return (
               <tr key={i}>
                 <td className={`truncate text-left ${me ? 'text-emerald-400' : 'text-zinc-300'}`} title={teamNames[i]}>
