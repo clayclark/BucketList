@@ -96,7 +96,6 @@ export function TeamView() {
           })}
         </tbody>
       </table>
-      <p className="text-[11px] text-zinc-600">Open roster spots count as replacement-level players. Punts re-rank every player.</p>
 
       <div>
         <div className="flex border-b border-zinc-800 pb-0.5 text-[11px] text-zinc-500">

@@ -53,7 +53,7 @@ export function PlayerDetail({ variant }: { variant: 'inline' | 'sheet' | 'aside
       <div className="flex flex-wrap gap-x-3">
         {variant === 'inline' && <span className="text-zinc-500">{player.team} · {player.pos}</span>}
         {stat('Val', v?.value.toFixed(1) ?? '-')}
-        {stat('Fit', fit === undefined ? '-' : signed(fit, 2))}
+        {stat('Fit', fit === undefined ? '-' : `${signed(fit, 2)} cats/wk`)}
         {stat('ADP', player.adp?.toFixed(1) ?? '-')}
         {!taken && draft.target && stat(`#${draft.target}`, <Avail p={availAtTarget(id)} />)}
         {v && stat('GP', v.gp.toFixed(0))}

@@ -37,7 +37,7 @@ type State = {
   tab: Tab
 }
 
-export type Tab = 'Buckets' | 'Players' | 'Team' | 'League' | 'Setup'
+export type Tab = 'Buckets' | 'Players' | 'Team' | 'League' | 'Setup' | 'Key'
 
 type Actions = {
   set: (patch: Partial<State>) => void

@@ -81,7 +81,6 @@ function Standings() {
           })}
         </tbody>
       </table>
-      <p className="mt-2 text-[11px] text-zinc-600">Category ranks, 1 is best. Records are expected categories won per week.</p>
     </div>
   )
 }

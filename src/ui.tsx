@@ -25,14 +25,12 @@ const cellColor = (z: number) => {
  */
 export function Fingerprint({ z, punts, detailed = false }: { z: CatLine; punts: readonly Cat[]; detailed?: boolean }) {
   return (
-    <span
-      className="flex shrink-0 gap-px"
-      title={CATS.map((c) => `${CAT_LABEL[c]} ${z[c] >= 0 ? '+' : ''}${z[c].toFixed(1)}`).join('  ')}
-    >
+    <span className="flex shrink-0 gap-px">
       {CATS.map((c) => (
         <span
           key={c}
-          className={`flex h-3 w-[7px] items-center justify-center rounded-[1px] text-[10px] ${detailed ? 'lg:h-5 lg:w-9' : ''} ${punts.includes(c) ? 'opacity-25' : ''}`}
+          title={`${CAT_LABEL[c]} ${z[c] >= 0 ? '+' : ''}${z[c].toFixed(1)}${punts.includes(c) ? ' (punted)' : ''}`}
+          className={`flex h-3.5 w-[9px] items-center justify-center rounded-[1px] text-[10px] ${detailed ? 'lg:h-5 lg:w-9' : ''} ${punts.includes(c) ? 'opacity-25' : ''}`}
           style={{ backgroundColor: cellColor(z[c]) }}
         >
           {detailed && <span className="hidden text-zinc-100 lg:inline">{z[c].toFixed(1)}</span>}

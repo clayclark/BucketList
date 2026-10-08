@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { AccessBanner } from './components/AccessBanner'
 import { Buckets } from './components/Buckets'
+import { Key } from './components/Key'
 import { ClockBar } from './components/ClockBar'
 import { DraftRoomCheck } from './components/DraftRoomCheck'
 import { LeagueView } from './components/LeagueView'
@@ -20,7 +21,8 @@ import { useDraft, type Tab } from './store'
 import { useBadgeSync } from './useBadgeSync'
 import { useNow } from './useNow'
 
-const TABS: Record<Tab, ComponentType> = { Buckets, Players, Team: TeamView, League: LeagueView, Setup }
+const TABS: Record<Tab, ComponentType> = { Buckets, Players, Team: TeamView, League: LeagueView, Setup, Key }
+const ICON_TABS: Tab[] = ['Key', 'Setup']
 const LIST_TABS: Tab[] = ['Buckets', 'Players']
 
 const LIVE_FRESH_MS = 90_000
@@ -121,7 +123,7 @@ export default function App() {
       <TeamStrip />
       <nav className="flex h-8 shrink-0 items-center gap-3 border-b border-zinc-900 px-3">
         {(Object.keys(TABS) as Tab[])
-          .filter((t) => t !== 'Setup')
+          .filter((t) => !ICON_TABS.includes(t))
           .map((t) => (
             <button
               key={t}
@@ -132,6 +134,13 @@ export default function App() {
             </button>
           ))}
         <Search />
+        <button
+          title="What the colors and numbers mean"
+          onClick={() => setTab(tab === 'Key' ? 'Buckets' : 'Key')}
+          className={`h-full border-b ${tab === 'Key' ? 'border-zinc-200 text-zinc-100' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+        >
+          ?
+        </button>
         <button
           title="Setup"
           onClick={() => setTab('Setup')}
