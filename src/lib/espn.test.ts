@@ -7,7 +7,14 @@ const pick = (overall: number, roundId: number, teamId: number, extra = {}) => (
 
 const league: EspnLeague = {
   teams: [
-    { id: 7, name: 'A', owners: ['{me}'], roster: { entries: [{ playerId: 100, playerPoolEntry: { keeperValue: 2 } }] } },
+    {
+      id: 7,
+      name: 'A',
+      owners: ['{me}'],
+      // Last season's roster: only the keeper list says who stays.
+      roster: { entries: [{ playerId: 99, playerPoolEntry: { keeperValue: 1 } }, { playerId: 100, playerPoolEntry: { keeperValue: 2 } }] },
+      draftStrategy: { keeperPlayerIds: [100] },
+    },
     { id: 3, name: 'B', roster: { entries: [] } },
   ],
   settings: {
@@ -45,7 +52,7 @@ describe('parseLeague', () => {
 
   it('falls back to the team’s reserved pick when the keeper round moved', () => {
     const moved = structuredClone(league)
-    moved.teams![0].roster!.entries![0].playerPoolEntry!.keeperValue = 3
+    moved.teams![0].roster!.entries![1].playerPoolEntry!.keeperValue = 3
     expect(parseLeague(moved).made.find((m) => m.playerId === 100)?.overall).toBe(4)
   })
 

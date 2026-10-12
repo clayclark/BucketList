@@ -34,7 +34,7 @@ export function ClockBar({
   live: LiveDraft | null
   practice: boolean
 }) {
-  const { draft, allPlayers, tiersByPlayer, entryApplies } = useModel()
+  const { draft, allPlayers, tiersByPlayer } = useModel()
   const { teamNames, teamAbbrevs, mySlot, espn, undo, picks, draftDate } = useDraft()
   const n = teamNames.length
   const round = Math.ceil(draft.currentPick / n)
@@ -49,7 +49,7 @@ export function ClockBar({
   const clock = live?.clock && !live.done ? live.clock : null
   // When the last pick came out of your buckets, say which one and what's left in it.
   const lastTier = last && tiersByPlayer.get(last.playerId)?.[0]
-  const lastTierLeft = lastTier?.section.entries.filter((e) => e.playerId !== null && !draft.drafted.has(e.playerId) && entryApplies(e)).length
+  const lastTierLeft = lastTier?.section.entries.filter((e) => e.playerId !== null && !draft.drafted.has(e.playerId)).length
 
   return (
     <header className={`shrink-0 border-b px-3 py-1.5 ${myTurn ? 'border-amber-300 bg-amber-300 text-black' : 'border-zinc-900'}`}>

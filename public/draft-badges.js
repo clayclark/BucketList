@@ -1,5 +1,5 @@
 // Decorates ESPN's draft room player list with Bucket List badges: an edge bar (take now, can wait,
-// in your buckets, or not for your punts), the bucket code under ESPN's rank, "4.1 +.43 50%" (value,
+// or in your buckets), the bucket code under ESPN's rank, "4.1 +.43 50%" (value,
 // fit, chance he's back) after the position pills, and a hover card with the 9-category heat strip. Data comes from the side panel (useBadgeSync.ts) via storage;
 // rows are matched by the ESPN player id in each headshot URL. Read-only: nothing on ESPN's page is clicked.
 ;(() => {
@@ -7,7 +7,7 @@
 
   const STALE_MS = 90_000 // the panel saves every 30s while open
   const CATS = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
-  const EDGE = { take: '#f43f5e', wait: '#10b981', tier: '#38bdf8', off: '#d4d4d8' }
+  const EDGE = { take: '#f43f5e', wait: '#10b981', tier: '#38bdf8' }
   const HEADSHOT = /headshots\/nba\/players\/full\/(\d+)\.png/
 
   let feed = null
@@ -22,8 +22,6 @@
     .bl-inline .bl-top { color: #b45309; }
     .bl-inline .bl-val { color: #1d1d1f; }
     .bl-code { display: block; font-size: 10px; font-weight: 700; color: #1d1d1f; line-height: 1.1; }
-    .bl-code.bl-off { opacity: .45; }
-    .bl-inline.bl-off { opacity: .45; }
     .bl-low { color: #be123c; } .bl-mid { color: #b45309; } .bl-high { color: #9ca3af; }
     .bl-card { position: fixed; z-index: 2147483647; background: #000; color: #d4d4d8; font: 12px ui-sans-serif, system-ui, -apple-system, sans-serif;
       padding: 8px 10px; border-radius: 4px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
@@ -73,7 +71,6 @@
         rankCell.appendChild(code)
       }
       if (code.textContent !== badge.code) code.textContent = badge.code
-      code.classList.toggle('bl-off', badge.state === 'off')
       row.dataset.blId = id
       edgeCell.style.boxShadow = `inset 4px 0 0 ${EDGE[badge.state]}`
       if (!inline) {
@@ -81,7 +78,6 @@
         inline.className = 'bl-inline'
         line.appendChild(inline)
       }
-      inline.classList.toggle('bl-off', badge.state === 'off')
       // Same order as the panel's columns: value, fit, then the chance he's back at your pick, shown
       // only when it's in doubt (under 95%) so it doesn't crowd every row.
       const parts = [
@@ -117,7 +113,7 @@
     const badge = row && live() ? feed.players[row.dataset.blId] : undefined
     if (!badge) return void (card.hidden = true)
     const name = row.querySelector('.playerinfo__playername a')?.textContent ?? ''
-    const call = { take: '<span class="bl-take">take now</span>', wait: '<span class="bl-wait">can wait</span>', off: '<span class="bl-dim">not for your punts</span>', tier: '' }[badge.state]
+    const call = { take: '<span class="bl-take">take now</span>', wait: '<span class="bl-wait">can wait</span>', tier: '' }[badge.state]
     card.innerHTML = `
       <div class="bl-row"><b style="color:#fff">${name}</b> <span>${badge.bucket}</span>${badge.tag ? ` <span class="bl-sky">${badge.tag}</span>` : ''} ${call}</div>
       <div class="bl-row bl-dim">Value <span style="color:#d4d4d8">${badge.value === null ? '-' : badge.value.toFixed(1)}</span> · Fit <span class="${badge.top ? 'bl-amber' : ''}" style="color:${badge.top ? '' : '#d4d4d8'}">${fitText(badge.fit) || '-'}</span>

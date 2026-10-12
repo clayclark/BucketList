@@ -1,6 +1,6 @@
 import { useState, type DragEvent, type ReactNode } from 'react'
 import { input, textBtn } from '../format'
-import { minPick, tagCats, type Section, type TierEntry } from '../lib/tiers'
+import { pickRange, type Section, type TierEntry } from '../lib/tiers'
 import { useModel } from '../model'
 import { useDraft } from '../store'
 import { PlayerRow, type DragProps } from './PlayerRow'
@@ -16,18 +16,16 @@ const readDrag = (e: DragEvent): Drag | null => {
 
 export function Buckets() {
   const { sections, showTaken, set, addSection } = useDraft()
-  const { draft, players, availAtTarget, allPlayers, entryApplies: applies, outlook } = useModel()
+  const { draft, players, availAtTarget, allPlayers, outlook } = useModel()
   const [editing, setEditing] = useState(false)
   const [over, setOver] = useState<string | null>(null)
   const [order, setOrder] = useState<Order>('sheet')
 
-  // Entries that don't fit your punts stay visible but dimmed, and don't count toward what's left.
-  const { isOpen, live, current, expected, soon, lastChance, canWait } = outlook
+  const { isOpen, inPlay, live, current, expected, soon, lastChance, canWait } = outlook
   const available = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
-  // Show any bucket with someone available, even if they're all dimmed (e.g. Giannis listed only as "punt FT").
   const shownSections = showTaken || editing ? sections : sections.filter((s) => s.entries.some(available))
   // Who's likely still there next time: with take-now and can-wait, that's the whole decision.
-  const likelyLater = soon && draft.target ? likelyAtNextPick(live, isOpen, availAtTarget) : []
+  const likelyLater = soon && draft.target ? likelyAtNextPick(live, inPlay, availAtTarget) : []
 
   // Column headers sort within each bucket; clicking the active one goes back to your sheet order.
   const col = (o: Order, label: string, className: string, title: string) => (
@@ -57,7 +55,7 @@ export function Buckets() {
         <span className="ml-auto flex gap-2">
           {col('value', 'Val', 'w-8', 'Value: total of your non-punted categories')}
           {col('fit', 'Fit', 'w-10', 'Fit: extra categories won per matchup')}
-          {col('avail', draft.target ? `#${draft.target}` : 'Left', 'w-9', "Chance he's still there at your next pick")}
+          {col('avail', draft.target ? `#${draft.target}` : 'Left', 'w-9', "Chance he's still there at your next pick. Click to sort by ADP")}
           {editing && <span className="w-3" />}
         </span>
       </div>
@@ -89,7 +87,6 @@ export function Buckets() {
             editing={editing}
             order={order}
             isOpen={isOpen}
-            applies={applies}
             over={over}
             setOver={setOver}
           />
@@ -105,11 +102,11 @@ export function Buckets() {
 }
 
 /** First few tiered players, in your order, who probably last until your next pick. */
-function likelyAtNextPick(live: Section[], isOpen: (e: TierEntry) => boolean, avail: (id: number) => number | null) {
+function likelyAtNextPick(live: Section[], inPlay: (s: Section, e: TierEntry) => boolean, avail: (id: number) => number | null) {
   const out: number[] = []
   for (const s of live)
     for (const e of s.entries)
-      if (e.playerId !== null && isOpen(e) && !out.includes(e.playerId) && (avail(e.playerId) ?? 0) >= 0.6) out.push(e.playerId)
+      if (e.playerId !== null && inPlay(s, e) && !out.includes(e.playerId) && (avail(e.playerId) ?? 0) >= 0.6) out.push(e.playerId)
   return out.slice(0, 3)
 }
 
@@ -122,7 +119,6 @@ function Bucket({
   editing,
   order,
   isOpen,
-  applies,
   over,
   setOver,
 }: {
@@ -134,12 +130,11 @@ function Bucket({
   editing: boolean
   order: Order
   isOpen: (e: TierEntry) => boolean
-  applies: (e: TierEntry) => boolean
   over: string | null
   setOver: (id: string | null) => void
 }) {
   const { moveEntry, moveSection, renameSection, removeSection, removeEntry, showTaken } = useDraft()
-  const { draft, availAtTarget, byId, teams } = useModel()
+  const { draft, byId, teams, outlook, allPlayers } = useModel()
   const [renaming, setRenaming] = useState(false)
 
   const open = section.entries.filter(isOpen)
@@ -148,7 +143,8 @@ function Bucket({
     if (e.playerId === null || !isOpen(e)) return -Infinity
     if (order === 'value') return byId.get(e.playerId)?.value ?? -99
     if (order === 'fit') return teams.fit.get(e.playerId) ?? -99
-    return availAtTarget(e.playerId) ?? 2
+    // By ADP, earliest first: the order the room takes them, without the ties at 0% and 100%.
+    return -(allPlayers.get(e.playerId)?.adp ?? 999)
   }
   const shown = order === 'sheet' ? visible : [...visible].sort((a, b) => score(b) - score(a))
 
@@ -239,8 +235,12 @@ function Bucket({
           <PlayerRow
             key={entry.id}
             id={entry.playerId}
-            tag={entry.tag && <Tag tag={entry.tag} applies={applies(entry)} current={draft.currentPick} />}
-            dimmed={!applies(entry)}
+            tag={
+              <>
+                {entry.tag && <Tag tag={entry.tag} pick={outlook.pick} />}
+                <Adp adp={allPlayers.get(entry.playerId)?.adp ?? null} />
+              </>
+            }
             hint={
               canWait(section.id, entry.playerId) && (
                 <span className="shrink-0 text-[11px] text-emerald-500" title="Likely still there at your next pick">
@@ -258,26 +258,29 @@ function Bucket({
   )
 }
 
-/** A sheet tag, colored by what it means right now: a punt you're running, a pick threshold reached. */
-function Tag({ tag, applies, current }: { tag: string; applies: boolean; current: number }) {
-  const n = minPick(tag)
-  if (n !== null) {
-    const ready = current >= n
-    return (
-      <span className={`shrink-0 text-[11px] ${ready ? 'text-emerald-400' : 'text-zinc-600'}`} title={ready ? `Pick ${n} reached` : `Your sheet says not before pick ${n}`}>
-        {tag}
-      </span>
-    )
-  }
-  const puntTag = tagCats(tag).length > 0
-  const noPunt = /^no punt$/i.test(tag.trim())
-  if (!puntTag && !noPunt) return <span className="shrink-0 text-[11px] text-sky-400">{tag}</span>
+/** A sheet tag, colored by where your pick sits in its range: early, in range, or past it (he's sliding). */
+function Tag({ tag, pick }: { tag: string; pick: number }) {
+  const range = pickRange(tag)
+  if (!range) return <span className="shrink-0 text-[11px] text-sky-400">{tag}</span>
+  const [color, title] =
+    pick < range.from
+      ? ['text-zinc-600', `Your range starts at pick ${range.from}`]
+      : range.to !== null && pick > range.to
+        ? ['text-amber-300', `Past your range (${range.to}): he's sliding`]
+        : ['text-emerald-400', `In your range at pick ${pick}`]
   return (
-    <span
-      className={`shrink-0 text-[11px] ${!applies ? 'text-zinc-600' : puntTag ? 'text-amber-300' : 'text-sky-400'}`}
-      title={applies ? (puntTag ? 'Matches your punt' : "You're not punting what his other listing needs") : puntTag ? `Only if you punt ${tag}` : "Only if you're not punting"}
-    >
+    <span className={`shrink-0 text-[11px] ${color}`} title={title}>
       {tag}
+    </span>
+  )
+}
+
+/** Market ADP beside your range, so "40-55" vs "36" reads at a glance. */
+function Adp({ adp }: { adp: number | null }) {
+  if (adp === null) return null
+  return (
+    <span className="shrink-0 text-[11px] text-zinc-500" title={`ADP ${adp.toFixed(1)}`}>
+      {Math.round(adp)}
     </span>
   )
 }

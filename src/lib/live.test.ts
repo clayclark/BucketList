@@ -37,6 +37,15 @@ describe('parseInit', () => {
     ])
   })
 
+  it('ignores round one team ids that also count 1, 2, 3', () => {
+    const init = initFor([[1, 10], [2, 20], [3, 30], [3, -1], [2, -1], [1, -1]])
+    expect(parseInit(init)).toEqual([
+      { overall: 1, teamId: 1, playerId: 10 },
+      { overall: 2, teamId: 2, playerId: 20 },
+      { overall: 3, teamId: 3, playerId: 30 },
+    ])
+  })
+
   it('returns nothing for a payload without a pick board', () => {
     expect(parseInit(btoa('not a draft'))).toEqual([])
   })

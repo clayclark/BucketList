@@ -18,11 +18,9 @@ export function PlayerRow({
   detailed = false,
   dragProps,
   over = false,
-  dimmed = false,
   trailing,
 }: {
   id: number
-  dimmed?: boolean
   tag?: ReactNode
   hint?: ReactNode
   detailed?: boolean
@@ -58,7 +56,7 @@ export function PlayerRow({
       ref={ref}
       {...dragProps}
       data-player-row={id}
-      className={`-mx-1 border-t px-1 ${over ? 'border-amber-300' : 'border-transparent'} ${selected ? 'bg-zinc-900' : ''} ${dimmed && !selected ? 'opacity-40' : ''}`}
+      className={`-mx-1 border-t px-1 ${over ? 'border-amber-300' : 'border-transparent'} ${selected ? 'bg-zinc-900' : ''}`}
     >
       <div
         className={`flex h-7 cursor-default items-center gap-1.5 ${selected ? '' : 'hover:bg-zinc-950'}`}

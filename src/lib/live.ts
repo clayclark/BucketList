@@ -19,25 +19,32 @@ const RECORD = 45
 /**
  * Reads picks out of the draft room's INIT snapshot. The board is a run of 45-byte records in pick
  * order: team id at byte 12, overall pick at 16, player id at 20 (-1 until made). Keepers are included.
- * The rest of the format is unknown, so find the run by its overall numbers counting 1, 2, 3.
+ * The rest of the format is unknown, so find the run by its overall numbers counting 1, 2, 3. Round one's
+ * team ids also count 1, 2, 3 four bytes earlier, so take the longest run: that's the whole board.
  */
 export function parseInit(base64: string): LivePick[] {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
   const view = new DataView(bytes.buffer)
   const int = (offset: number) => view.getInt32(offset)
-  const overallAt = (start: number, i: number) => int(start + RECORD * i + 16)
-
-  for (let start = 0; start + RECORD * 2 + 24 <= bytes.length; start++) {
-    if (overallAt(start, 0) !== 1 || overallAt(start, 1) !== 2 || overallAt(start, 2) !== 3) continue
-    const picks: LivePick[] = []
-    for (let i = 0; start + RECORD * i + 24 <= bytes.length && overallAt(start, i) === i + 1; i++) {
-      const record = start + RECORD * i
-      const playerId = int(record + 20)
-      if (playerId > 0) picks.push({ overall: i + 1, teamId: int(record + 12), playerId })
-    }
-    return picks
+  const fits = (start: number, i: number) => start + RECORD * i + 24 <= bytes.length
+  const runAt = (start: number) => {
+    let n = 0
+    while (fits(start, n) && int(start + RECORD * n + 16) === n + 1) n++
+    return n
   }
-  return []
+
+  let best = { start: 0, length: 0 }
+  for (let start = 0; fits(start, 2); start++) {
+    const length = runAt(start)
+    if (length >= 3 && length > best.length) best = { start, length }
+  }
+  const picks: LivePick[] = []
+  for (let i = 0; i < best.length; i++) {
+    const record = best.start + RECORD * i
+    const playerId = int(record + 20)
+    if (playerId > 0) picks.push({ overall: i + 1, teamId: int(record + 12), playerId })
+  }
+  return picks
 }
 
 export const livePicks = (live: LiveDraft): LivePick[] => [

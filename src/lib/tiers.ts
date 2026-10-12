@@ -1,5 +1,3 @@
-import type { Cat } from './cats'
-
 export type TierEntry = { id: string; playerId: number | null; name: string; tag: string | null }
 export type Section = { id: string; name: string; note: string | null; entries: TierEntry[] }
 
@@ -79,9 +77,10 @@ export const nameMatcher = (players: { id: number; name: string }[]) => {
 const isHeader = (cell: string) => /^(bucket|tier|flier|upside|health|spillage)\b/i.test(cell.trim())
 const isNote = (cell: string) => /^[^a-z]+$/.test(cell) && /[A-Z]/.test(cell)
 
+/** "Trae Young (FG or TO) (34+)" → name "Trae Young", tag "FG or TO, 34+". */
 const splitTag = (cell: string) => {
-  const m = cell.match(/^(.*?)\s*\(([^)]*)\)\s*$/)
-  return m ? { name: m[1], tag: m[2] } : { name: cell, tag: null }
+  const tags = [...cell.matchAll(/\(([^)]*)\)/g)].map((m) => m[1].trim()).filter(Boolean)
+  return { name: cell.split('(')[0].trim(), tag: tags.length ? tags.join(', ') : null }
 }
 
 /**
@@ -116,25 +115,14 @@ export function parseTierSheet(csv: string, match: (name: string) => number | nu
   return sections
 }
 
-const TAG_CATS: Record<string, Cat> = { TO: 'to', FT: 'ft', FG: 'fg' }
-
-/**
- * Sheet tags that make an entry conditional: "TO" or "FG or TO" mean "in this bucket if you punt that",
- * "No Punt" means "in this bucket if you don't". Returns whether the entry applies to your punts.
- * `twins` are the tags on the same player's other entries, which say what "No Punt" refers to.
- */
-export function tagApplies(tag: string | null, punts: readonly Cat[], twins: (string | null)[]): boolean {
-  if (!tag) return true
-  if (/^no punt$/i.test(tag.trim())) return !twins.flatMap(tagCats).some((c) => punts.includes(c))
-  const cats = tagCats(tag)
-  return cats.length === 0 || cats.some((c) => punts.includes(c))
+/** The picks a player is worth, from a tag or bucket name: "40-55", "35+" or "Upside Fliers (~100+)". */
+export const pickRange = (text: string | null) => {
+  const m = text?.match(/(\d+)\s*(?:-\s*(\d+)|\+)/)
+  return m ? { from: Number(m[1]), to: m[2] ? Number(m[2]) : null } : null
 }
 
-export const tagCats = (tag: string | null): Cat[] =>
-  tag ? tag.split(/\s+or\s+/i).flatMap((part) => (TAG_CATS[part.trim().toUpperCase()] ? [TAG_CATS[part.trim().toUpperCase()]] : [])) : []
-
-/** "35+" in the sheet: don't take before pick 35. */
-export const minPick = (tag: string | null) => Number(tag?.match(/^(\d+)\+$/)?.[1]) || null
+/** An entry's own range, else its bucket's. */
+export const entryRange = (section: Section, entry: TierEntry) => pickRange(entry.tag) ?? pickRange(section.name)
 
 /**
  * Buckets back in the sheet's layout (header row of up to 8 bucket names, players down each column,
@@ -153,15 +141,17 @@ export function sectionsToRows(sections: Section[], perRow = 8): string[][] {
   return rows
 }
 
+const withoutNote = (name: string) => name.split('(')[0].trim()
+
 /** Short bucket names for tight spots: "Bucket 7" → "B7", "Health Bucket" → "Health", "Flier Tier 2" → "Flier 2". */
 export const shortBucket = (name: string) =>
-  name.replace(/^Bucket\s+/i, 'B').replace(/\s+Bucket$/i, '').replace(/^Upside\s+/i, '').replace(/\s+Tier\s+/i, ' ')
+  withoutNote(name).replace(/^Bucket\s+/i, 'B').replace(/\s+Bucket$/i, '').replace(/^Upside\s+/i, '').replace(/\s+Tier\s+/i, ' ')
 
 /** Tightest bucket code for ESPN's rows: "Bucket 7" → "B7", "Flier Tier 2" → "F2", "Upside Fliers" → "UF", "Health Bucket" → "H". */
 export const bucketCode = (name: string) => {
-  const numbered = name.match(/^Bucket\s+(\d+)$/i)
+  const numbered = withoutNote(name).match(/^Bucket\s+(\d+)$/i)
   if (numbered) return `B${numbered[1]}`
-  return name
+  return withoutNote(name)
     .split(/\s+/)
     .filter((w) => !/^(bucket|tier)$/i.test(w))
     .map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase()))

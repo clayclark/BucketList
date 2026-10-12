@@ -6,7 +6,7 @@ import { useDraft } from './store'
 
 /**
  * One player's badge in ESPN's draft room (public/draft-badges.js renders it).
- * `state` drives the edge bar: take now, can wait, in your buckets, or listed only for a punt you aren't running.
+ * `state` drives the edge bar: take now, can wait, or in your buckets.
  */
 export type Badge = {
   /** Tight code for the row ("F2"); `bucket` is the readable name for the hover card. */
@@ -17,7 +17,7 @@ export type Badge = {
   fit: number | null
   top: boolean
   avail: number | null
-  state: 'take' | 'wait' | 'tier' | 'off'
+  state: 'take' | 'wait' | 'tier'
   /** Category z-scores in strip order; null for punted categories. */
   z: (number | null)[]
 }
@@ -31,7 +31,7 @@ const HEARTBEAT_MS = 30_000
  * saving (with a heartbeat), so a closed panel never leaves stale numbers on ESPN's page.
  */
 export function useBadgeSync() {
-  const { tiersByPlayer, draft, byId, teams, topFit, availAtTarget, entryApplies, outlook } = useModel()
+  const { tiersByPlayer, draft, byId, teams, topFit, availAtTarget, outlook } = useModel()
   const punts = useDraft((s) => s.punts)
 
   useEffect(() => {
@@ -39,8 +39,7 @@ export function useBadgeSync() {
     const players: Record<number, Badge> = {}
     for (const [id, refs] of tiersByPlayer) {
       if (draft.drafted.has(id)) continue
-      const ref = refs.find((r) => entryApplies(r.entry)) ?? refs[0]
-      const applies = entryApplies(ref.entry)
+      const [ref] = refs
       const v = byId.get(id)
       players[id] = {
         code: bucketCode(ref.section.name),
@@ -50,7 +49,7 @@ export function useBadgeSync() {
         fit: teams.fit.get(id) ?? null,
         top: topFit.has(id),
         avail: availAtTarget(id),
-        state: !applies ? 'off' : ref.section.id === outlook.lastChance ? 'take' : outlook.canWait(ref.section.id, id) ? 'wait' : 'tier',
+        state: ref.section.id === outlook.lastChance ? 'take' : outlook.canWait(ref.section.id, id) ? 'wait' : 'tier',
         z: v ? CATS.map((c) => (punts.includes(c) ? null : Math.round(v.z[c] * 10) / 10)) : [],
       }
     }
@@ -58,5 +57,5 @@ export function useBadgeSync() {
     save()
     const beat = setInterval(save, HEARTBEAT_MS)
     return () => clearInterval(beat)
-  }, [tiersByPlayer, draft, byId, teams, topFit, availAtTarget, entryApplies, outlook, punts])
+  }, [tiersByPlayer, draft, byId, teams, topFit, availAtTarget, outlook, punts])
 }

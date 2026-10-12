@@ -17,12 +17,6 @@ export default defineConfig(({ mode }) => {
         })
       },
     },
-    // Yahoo's public API sends no CORS headers; the extension's host permission covers it outside dev.
-    '/yahoo': {
-      target: 'https://pub-api-ro.fantasysports.yahoo.com',
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/yahoo/, ''),
-    },
   }
   return {
     plugins: [react(), tailwindcss()],

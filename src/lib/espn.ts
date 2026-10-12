@@ -18,7 +18,7 @@ export type Player = {
   team: string
   pos: string
   injury: string | null
-  /** ESPN, Yahoo and Fantrax ADP averaged, merged in by the model. */
+  /** Fantrax ADP (ESPN's if Fantrax is down), merged in by the model. Null means nobody drafts him. */
   adp: number | null
   rank: number
   proj: Basis | null
@@ -119,6 +119,8 @@ export type EspnLeague = {
     nickname?: string
     owners?: string[]
     roster?: { entries?: { playerId: number; playerPoolEntry?: { keeperValue?: number } }[] }
+    /** Who the team chose to keep. Rosters still hold last season's team until the draft. */
+    draftStrategy?: { keeperPlayerIds?: number[] }
   }[]
   settings?: {
     draftSettings?: { pickOrder?: number[]; date?: number }
@@ -151,18 +153,19 @@ export function parseLeague(data: EspnLeague): League {
     .filter((p) => p.playerId > 0)
     .map((p) => ({ overall: p.overallPickNumber, teamId: p.teamId, playerId: p.playerId, keeper: !!p.keeper }))
 
-  // Before the draft starts, keepers only show up on rosters. Place each on its team's reserved keeper pick.
+  // Before the draft starts, keepers are only on each team's keeper list. Place each on its team's reserved pick.
   const takenPlayers = new Set(made.map((m) => m.playerId))
   const usedPicks = new Set(made.map((m) => m.overall))
   for (const team of data.teams ?? []) {
-    for (const entry of team.roster?.entries ?? []) {
-      if (takenPlayers.has(entry.playerId)) continue
+    for (const playerId of team.draftStrategy?.keeperPlayerIds ?? []) {
+      if (takenPlayers.has(playerId)) continue
       const reserved = picks.filter((p) => p.reservedForKeeper && p.teamId === team.id && !usedPicks.has(p.overallPickNumber))
-      // keeperValue is usually the keeper round, but pick trades can move the reserved pick to another round.
-      const spot = reserved.find((p) => p.roundId === entry.playerPoolEntry?.keeperValue) ?? reserved[0]
+      // keeperValue is usually the keeper round, but trades and commissioner edits can move the reserved pick.
+      const round = team.roster?.entries?.find((e) => e.playerId === playerId)?.playerPoolEntry?.keeperValue
+      const spot = reserved.find((p) => p.roundId === round) ?? reserved[0]
       if (!spot) continue
       usedPicks.add(spot.overallPickNumber)
-      made.push({ overall: spot.overallPickNumber, teamId: team.id, playerId: entry.playerId, keeper: true })
+      made.push({ overall: spot.overallPickNumber, teamId: team.id, playerId, keeper: true })
     }
   }
 

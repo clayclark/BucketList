@@ -36,7 +36,7 @@ The sheet is read as blocks: a header row of section names, then players listed 
 | Nikola Jokic | Shai Gilgeous-Alexander | Cade Cunningham (TO) | Kawhi Leonard (30+) |
 | Victor Wembanyama | Luka Doncic | Giannis Antetokounmpo (FT) | Anthony Davis (35+) |
 
-Tags in parentheses are optional. `(TO)`, `(FT)`, `(FG)` and `(No Punt)` tie a listing to your punts, and `(30+)` means "not before pick 30". Number-only cells and ALL-CAPS notes are skipped. No sheet? Build your buckets in the panel with **Edit**.
+Tags in parentheses are optional, and a cell can have several: `Trae Young (FG or TO) (34+)`. A pick range, `(40-55)` or `(30+)`, is where you think he's worth taking; a range in a header, `Upside Fliers (~100+)`, covers everyone under it without their own. Anything else, like `(TO)`, is shown as a note. Number-only cells and ALL-CAPS notes are skipped. No sheet? Build your buckets in the panel with **Edit**.
 
 ## Draft night
 
@@ -54,26 +54,26 @@ ESPN's practice drafts work the same way, so a mock is a full rehearsal.
 | **Heat strip** | 9 cells, one per category. Green helps, red hurts, brighter is stronger. |
 | **Val** | How good he is in a vacuum: a z-score total across the 9 categories (minus any you punt), against the top `teams × roster` players. |
 | **Fit** | How many more categories per week he's expected to win *you*, given your roster. Amber marks your top 3 fits. |
-| **%** | The chance he's still there at your next pick. |
+| **%** | The chance he's still there at your next pick. In Buckets, its header sorts each bucket by ADP, earliest first. |
 
 Bucket headers say how many should be left at your next pick. Near your pick, the highest bucket that won't last says **take one now**, players likely to come back say **can wait**, and a line lists who's likely still there next time.
 
 ## Tabs
 
 - **Category strip**: your rank in each category, always visible under the clock. Hover or select a player to preview how he moves each rank.
-- **Buckets**: your tier sheet, with taken players dropping out. Sheet tags are understood: `Cade (TO)` and `Cade (No Punt)` follow your punt settings, and `Kawhi (30+)` lights up once the draft reaches pick 30. **Edit** re-tiers by drag and drop; Setup → **Copy as sheet** copies your buckets back in the sheet's layout.
+- **Buckets**: your tier sheet, with taken players dropping out. A pick range tag is grey before your pick reaches it, green in it, and amber once he's slid past it. Until his range starts, a player stays listed but doesn't count toward "left" or "take one now". The grey number after it is his ADP. **Edit** re-tiers by drag and drop; Setup → **Copy as sheet** copies your buckets back in the sheet's layout.
 - **Players**: everyone, sortable by value, fit, ADP or availability. Click a row (or use the arrow keys) for details, including exactly which of your ranks he changes.
 - **Team**: the punt advisor, category ranks with punt toggles, and your roster placed into your league's lineup slots.
 - **League**: category standings with your expected record against each team, the draft board, and rosters.
 
 ## In ESPN's draft room
 
-While the panel is open, ESPN's own player list gets badges. Your bucket players get an edge bar (red take now, green can wait, blue in your buckets, grey not for your punts) and their bucket code under ESPN's rank. `4.1 +.43 50%` next to the position is value, fit, and his chance of lasting to your pick (shown when under 95%). Hover a row for his heat strip.
+While the panel is open, ESPN's own player list gets badges. Your bucket players get an edge bar (red take now, green can wait, blue in your buckets) and their bucket code under ESPN's rank. `4.1 +.43 50%` next to the position is value, fit, and his chance of lasting to your pick (shown when under 95%). Hover a row for his heat strip.
 
 ## Where the numbers come from
 
 - **Projections**: ESPN.
-- **ADP**: an equal blend of ESPN, Yahoo and Fantrax, the same blend Hashtag Basketball publishes. A source that fails to load is left out.
+- **ADP**: Fantrax, whose drafters are the sharpest of the big sites. ESPN's ADP mostly follows ESPN's own rankings, so it's only a fallback if Fantrax fails to load.
 - **Category swings**: Josh Lloyd's [2025-26 consistency study](https://joshlloydfantasy.com/research/fantasy-basketball-consistency-study/). Fit counts a lead in a steady category (rebounds, points) as more likely to win the week than the same lead in a streaky one (steals, blocks).
 - **Picks**: the draft room's live feed, placed on ESPN's real pick order (traded picks, third-round reversal) with keepers at their reserved picks. Turn sync off in Setup to enter picks by hand (search + Enter, Cmd+Z to undo).
 - **Buckets**: your Google Sheet, set in Setup.
@@ -86,4 +86,4 @@ While the panel is open, ESPN's own player list gets badges. Your bucket players
 
 ## License
 
-MIT. Not affiliated with or endorsed by ESPN, Yahoo or Fantrax.
+MIT. Not affiliated with or endorsed by ESPN or Fantrax.

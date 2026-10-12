@@ -36,10 +36,13 @@ function useLiveDraft() {
   const now = useNow(10_000)
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.storage) return
-    const load = () => chrome.storage.local.get('liveDraft').then((s) => setStored((s.liveDraft as LiveDraft | undefined) ?? null))
-    load()
-    chrome.storage.onChanged.addListener(load)
-    return () => chrome.storage.onChanged.removeListener(load)
+    chrome.storage.local.get('liveDraft').then((s) => setStored((s.liveDraft as LiveDraft | undefined) ?? null))
+    // Only the feed's own key: the panel writes badges on every model change, and reacting to those loops.
+    const onChange = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes.liveDraft) setStored((changes.liveDraft.newValue as LiveDraft | undefined) ?? null)
+    }
+    chrome.storage.onChanged.addListener(onChange)
+    return () => chrome.storage.onChanged.removeListener(onChange)
   }, [])
   const live = stored && !stored.done && now - stored.seen < LIVE_FRESH_MS ? stored : null
   return { live, feedLeague: stored?.leagueId ?? null }

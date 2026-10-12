@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { createContext, use, useCallback, useMemo, type ReactNode } from 'react'
 import { CATS, type Cat, type CatLine } from './lib/cats'
-import { blendAdp, fetchMarketAdp } from './lib/adp'
+import { fetchFantraxAdp } from './lib/adp'
 import { availability, openPicks } from './lib/draft'
 import { fetchPlayers, type Player } from './lib/espn'
 import { openSlots } from './lib/slots'
-import { tagApplies, type Section, type TierEntry } from './lib/tiers'
+import { entryRange, type Section, type TierEntry } from './lib/tiers'
 import { activeCats, fitScores, replacementLevel, teamStrength, valuePlayers, winScales, type Valued } from './lib/value'
 import { ownersOf, useDraft } from './store'
 
@@ -15,16 +15,18 @@ const FIT_CANDIDATES = 250
 
 function useBuildModel() {
   const espn = useQuery({ queryKey: ['players'], queryFn: fetchPlayers, staleTime: 60 * 60 * 1000 })
-  const market = useQuery({
-    queryKey: ['market-adp'],
-    queryFn: () => fetchMarketAdp(espn.data ?? []),
+  const fantrax = useQuery({
+    queryKey: ['fantrax-adp'],
+    queryFn: () => fetchFantraxAdp(espn.data ?? []),
     enabled: !!espn.data,
     staleTime: 60 * 60 * 1000,
   })
+  // ESPN's ADP only stands in if Fantrax is down. Players Fantrax doesn't list go undrafted there, while ESPN
+  // parks its undrafted players near pick 140, ahead of real Fantrax picks.
   const data = useMemo(
     (): Player[] | undefined =>
-      espn.data?.map(({ espnAdp, ...p }) => ({ ...p, adp: blendAdp([espnAdp, ...(market.data ?? []).map((m) => m.get(p.id))]) })),
-    [espn.data, market.data],
+      espn.data?.map(({ espnAdp, ...p }) => ({ ...p, adp: fantrax.data ? (fantrax.data.get(p.id) ?? null) : espnAdp })),
+    [espn.data, fantrax.data],
   )
   const players = { ...espn, data }
   const { teamCount, rosterSize, mySlot, punts, basis, totals, picks, sections, pickOwners, starters } = useDraft()
@@ -104,18 +106,6 @@ function useBuildModel() {
     return out
   }, [sections])
 
-  // Sheet entries tagged for a punt you aren't running (or "No Punt" when you are) don't count.
-  const entryApplies = useCallback(
-    (e: TierEntry) =>
-      e.playerId === null ||
-      tagApplies(
-        e.tag,
-        punts,
-        (tiersByPlayer.get(e.playerId) ?? []).filter((r) => r.entry.id !== e.id).map((r) => r.entry.tag),
-      ),
-    [punts, tiersByPlayer],
-  )
-
   // Best three available fits among tiered players, highlighted on the board.
   const topFit = useMemo(() => {
     const tiered = teams.available.filter((v) => tiersByPlayer.has(v.player.id) && teams.fit.has(v.player.id))
@@ -138,13 +128,17 @@ function useBuildModel() {
 
   // The take-now-or-wait read on your buckets, shared by the Buckets view and the draft room badges.
   const outlook = useMemo(() => {
-    const isOpen = (e: TierEntry) => (e.playerId === null || !draft.drafted.has(e.playerId)) && entryApplies(e)
-    const live = sections.filter((s) => s.entries.some(isOpen))
+    const isOpen = (e: TierEntry) => e.playerId === null || !draft.drafted.has(e.playerId)
+    // Players whose sheet range ("40-55", "35+") starts after your pick stay listed, since you can still take
+    // them early, but don't count toward what's left or "take one now".
+    const pick = draft.mine[0] ?? draft.currentPick
+    const inPlay = (s: Section, e: TierEntry) => isOpen(e) && (entryRange(s, e)?.from ?? 0) <= pick
+    const live = sections.filter((s) => s.entries.some((e) => inPlay(s, e)))
     // How many of each bucket should still be on the board at your next pick.
     const expected = new Map(
       sections.map((s) => {
-        const ids = new Set(s.entries.flatMap((e) => (e.playerId !== null && isOpen(e) ? [e.playerId] : [])))
-        return [s.id, draft.target ? [...ids].reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null] as const
+        const ids = new Set(s.entries.flatMap((e) => (e.playerId !== null && inPlay(s, e) ? [e.playerId] : [])))
+        return [s.id, draft.target && ids.size ? [...ids].reduce((n, id) => n + (availAtTarget(id) ?? 0), 0) : null] as const
       }),
     )
     // Near your pick: the highest bucket that won't last, and the top buckets you're choosing from.
@@ -152,10 +146,10 @@ function useBuildModel() {
     const lastChance = soon ? live.find((s) => (expected.get(s.id) ?? Infinity) < 1)?.id : undefined
     const waitBuckets = new Set(soon ? live.slice(0, 2).map((s) => s.id) : [])
     const canWait = (sectionId: string, playerId: number) => waitBuckets.has(sectionId) && (availAtTarget(playerId) ?? 0) >= 0.7
-    return { isOpen, live, current: live[0]?.id, expected, soon, lastChance, waitBuckets, canWait }
-  }, [sections, draft, entryApplies, availAtTarget, mySlot])
+    return { isOpen, inPlay, pick, live, current: live[0]?.id, expected, soon, lastChance, waitBuckets, canWait }
+  }, [sections, draft, availAtTarget, mySlot])
 
-  return { players, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, entryApplies, outlook, availAtTarget, cats: activeCats(punts) }
+  return { players, allPlayers, valued, byId, draft, teams, ranks, slots, topFit, tiersByPlayer, outlook, availAtTarget, cats: activeCats(punts) }
 }
 
 export type Model = ReturnType<typeof useBuildModel>

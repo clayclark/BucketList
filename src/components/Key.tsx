@@ -68,16 +68,17 @@ export function Key() {
       <Group title="Buckets">
         <Line sample={<span className="text-amber-300">≈2 left at #15</span>}>How many should still be there at your next pick.</Line>
         <Line sample={<span className="font-semibold text-rose-400">take one now</span>}>The highest bucket that won't last to your pick. Only near your turn.</Line>
-        <Line sample={<span className="text-[11px] text-amber-300">TO</span>}>Sheet tag that matches your punt. Blue tags are other sheet notes.</Line>
-        <Line sample={<span className="text-zinc-100 opacity-40">Cade Cunningham</span>}>Listed for a punt you aren't running. Not counted in "left".</Line>
+        <Line sample={<span className="text-[11px] text-sky-400">TO</span>}>Sheet note, like the punt he fits.</Line>
+        <Line sample={<span className="text-[11px] text-zinc-500">36</span>}>ADP, where the room usually takes him.</Line>
         <Line
           sample={
             <>
-              <span className="text-[11px] text-zinc-600">30+</span> <span className="text-[11px] text-emerald-400">30+</span>
+              <span className="text-[11px] text-zinc-600">40-55</span> <span className="text-[11px] text-emerald-400">40-55</span>{' '}
+              <span className="text-[11px] text-amber-300">40-55</span>
             </>
           }
         >
-          Not before that pick; turns green once the draft gets there.
+          Your pick range: before it (not counted in "left"), in it, past it.
         </Line>
       </Group>
 
@@ -85,11 +86,11 @@ export function Key() {
         <Line
           sample={
             <>
-              <Bar color="#f43f5e" /> <Bar color="#10b981" /> <Bar color="#38bdf8" /> <Bar color="#d4d4d8" />
+              <Bar color="#f43f5e" /> <Bar color="#10b981" /> <Bar color="#38bdf8" />
             </>
           }
         >
-          Take now, can wait, in your buckets, not for your punts.
+          Take now, can wait, in your buckets.
         </Line>
         <Line sample={<span className="text-zinc-300">B6</span>}>Bucket code under ESPN's rank.</Line>
         <Line sample={<span className="text-zinc-300">4.0 +.55 49%</span>}>Value, fit, and chance he's back (shown under 95%). Hover a row for his categories.</Line>
